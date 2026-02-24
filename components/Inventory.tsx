@@ -104,6 +104,16 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
     }, 50);
   };
 
+  const handleCancel = () => {
+    setSelectedProduct(null);
+    setSearchCode('');
+    setQuantity(1);
+    setError(null);
+    setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 50);
+  };
+
   const exportInventory = () => {
     const countedItems = inventory.filter(item => item.quantidade > 0);
     if (countedItems.length === 0) return;
@@ -199,6 +209,16 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
                   className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 rounded-xl shadow-lg h-[52px] active:scale-95 transition-all"
                 >
                   Contar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold px-4 rounded-xl h-[52px] active:scale-95 transition-all flex items-center justify-center"
+                  title="Cancelar seleção"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </form>
             </div>

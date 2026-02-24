@@ -11,17 +11,44 @@ const Consultation: React.FC<ConsultationProps> = ({ inventory, lastUpdate }) =>
   const [searchCode, setSearchCode] = useState('');
   const [result, setResult] = useState<Product | null>(null);
   const [searched, setSearched] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchCode) return;
 
-    // Search by codigo or EAN
-    const found = inventory.find(item => 
-      String(item.codigo) === searchCode || String(item.ean) === searchCode
-    );
-    setResult(found || null);
-    setSearched(true);
+    setIsSearching(true);
+    setError(null);
+    setSearched(false);
+
+    try {
+      // Prioridade 1: Busca no Banco de Dados PostgreSQL (Neon)
+      const response = await fetch(`/api/products/${searchCode}`);
+      
+      if (response.ok) {
+        const dbProduct = await response.json();
+        setResult(dbProduct);
+        setSearched(true);
+      } else {
+        // Prioridade 2: Fallback para a planilha de consulta local
+        const found = inventory.find(item => 
+          String(item.codigo) === searchCode || String(item.ean) === searchCode
+        );
+        setResult(found || null);
+        setSearched(true);
+      }
+    } catch (err) {
+      console.error("Search error:", err);
+      // Fallback em caso de erro de conexão
+      const found = inventory.find(item => 
+        String(item.codigo) === searchCode || String(item.ean) === searchCode
+      );
+      setResult(found || null);
+      setSearched(true);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,10 +88,18 @@ const Consultation: React.FC<ConsultationProps> = ({ inventory, lastUpdate }) =>
           </div>
           <button
             type="submit"
-            disabled={!searchCode}
-            className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold py-4 px-10 rounded-2xl transition-all shadow-md shadow-indigo-100 whitespace-nowrap active:scale-95"
+            disabled={!searchCode || isSearching}
+            className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold py-4 px-10 rounded-2xl transition-all shadow-md shadow-indigo-100 whitespace-nowrap active:scale-95 min-w-[160px]"
           >
-            Consultar
+            {isSearching ? (
+              <div className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Buscando...
+              </div>
+            ) : 'Consultar'}
           </button>
         </form>
       </div>

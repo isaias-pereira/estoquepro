@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 
 interface BarcodeScannerProps {
   onScan: (decodedText: string) => void;
@@ -8,39 +8,48 @@ interface BarcodeScannerProps {
 }
 
 const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
 
   useEffect(() => {
-    scannerRef.current = new Html5QrcodeScanner(
-      "reader",
-      { 
-        fps: 10, 
-        qrbox: { width: 250, height: 150 },
-        aspectRatio: 1.777778 // 16:9
-      },
-      /* verbose= */ false
-    );
+    const html5QrCode = new Html5Qrcode("reader");
+    html5QrCodeRef.current = html5QrCode;
 
-    scannerRef.current.render(
-      (decodedText) => {
-        onScan(decodedText);
-        if (scannerRef.current) {
-          scannerRef.current.clear().catch(error => {
-            console.error("Failed to clear scanner", error);
-          });
-        }
-      },
-      (error) => {
-        // console.warn(`Code scan error = ${error}`);
+    const startScanner = async () => {
+      try {
+        await html5QrCode.start(
+          { facingMode: "environment" }, // Prefer rear camera
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 150 },
+            aspectRatio: 1.777778
+          },
+          (decodedText) => {
+            onScan(decodedText);
+            stopScanner();
+          },
+          (errorMessage) => {
+            // ignore errors
+          }
+        );
+      } catch (err) {
+        console.error("Unable to start scanner", err);
       }
-    );
+    };
+
+    const stopScanner = async () => {
+      if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
+        try {
+          await html5QrCodeRef.current.stop();
+        } catch (err) {
+          console.error("Unable to stop scanner", err);
+        }
+      }
+    };
+
+    startScanner();
 
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.clear().catch(error => {
-          console.error("Failed to clear scanner on unmount", error);
-        });
-      }
+      stopScanner();
     };
   }, [onScan]);
 
@@ -64,7 +73,9 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
           </button>
         </div>
         <div className="p-4">
-          <div id="reader" className="overflow-hidden rounded-2xl border-2 border-slate-100"></div>
+          <div id="reader" className="overflow-hidden rounded-2xl border-2 border-slate-100 bg-slate-900 aspect-video flex items-center justify-center">
+            <div className="text-white/20 text-xs font-bold animate-pulse">Iniciando câmera...</div>
+          </div>
           <p className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-4">
             Posicione o código de barras dentro da área demarcada
           </p>

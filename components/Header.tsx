@@ -95,61 +95,81 @@ const Header: React.FC<HeaderProps> = ({ user, currentView, onNavigate, onLogout
         </div>
 
         {/* Mobile Navigation Dropdown */}
-        <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-96 pb-4' : 'max-h-0'}`}>
-          <div className="flex flex-col space-y-1 pt-2 border-t border-indigo-600/50">
-            <button
-              onClick={() => handleNavigate('consulta')}
-              className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-bold transition-all ${
-                currentView === 'consulta' ? 'bg-white text-indigo-700 shadow-lg' : 'text-indigo-100 hover:bg-indigo-600'
-              }`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <span>Consulta</span>
-            </button>
-
-            <button
-              onClick={() => handleNavigate('inventario')}
-              className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-bold transition-all ${
-                currentView === 'inventario' ? 'bg-white text-indigo-700 shadow-lg' : 'text-indigo-100 hover:bg-indigo-600'
-              }`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              <span>Inventário</span>
-            </button>
-
-            {user.role === 'admin' && (
+        <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-[500px] pb-6' : 'max-h-0'}`}>
+          <div className="pt-4 border-t border-indigo-600/50 space-y-6">
+            <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={() => handleNavigate('database')}
-                className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-bold transition-all ${
-                  currentView === 'database' ? 'bg-white text-indigo-700 shadow-lg' : 'text-indigo-100 hover:bg-indigo-600'
+                onClick={() => handleNavigate('consulta')}
+                title="Consultar preços e estoque de produtos"
+                className={`flex flex-col items-center justify-center p-5 rounded-2xl transition-all active:scale-95 ${
+                  currentView === 'consulta' 
+                    ? 'bg-white text-indigo-700 shadow-xl ring-2 ring-white' 
+                    : 'bg-indigo-800/50 text-indigo-100 border border-indigo-500/30'
                 }`}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-                </svg>
-                <span>Base de Dados</span>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-2 ${currentView === 'consulta' ? 'bg-indigo-50' : 'bg-indigo-700/50'}`}>
+                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <span className="text-xs font-black uppercase tracking-widest">Consulta</span>
+                <span className={`text-[8px] mt-1 font-bold uppercase tracking-tighter opacity-60 ${currentView === 'consulta' ? 'text-indigo-500' : 'text-indigo-200'}`}>Ver preços e estoque</span>
               </button>
-            )}
 
-            <div className="pt-4 mt-4 border-t border-indigo-600/50 flex items-center justify-between px-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-indigo-800 rounded-full flex items-center justify-center text-xs font-bold ring-2 ring-indigo-400/30">
+              <button
+                onClick={() => handleNavigate('inventario')}
+                title="Realizar contagem de estoque e inventário"
+                className={`flex flex-col items-center justify-center p-5 rounded-2xl transition-all active:scale-95 ${
+                  currentView === 'inventario' 
+                    ? 'bg-white text-indigo-700 shadow-xl ring-2 ring-white' 
+                    : 'bg-indigo-800/50 text-indigo-100 border border-indigo-500/30'
+                }`}
+              >
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-2 ${currentView === 'inventario' ? 'bg-indigo-50' : 'bg-indigo-700/50'}`}>
+                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+                <span className="text-xs font-black uppercase tracking-widest">Inventário</span>
+                <span className={`text-[8px] mt-1 font-bold uppercase tracking-tighter opacity-60 ${currentView === 'inventario' ? 'text-indigo-500' : 'text-indigo-200'}`}>Lançar contagens</span>
+              </button>
+
+              {user.role === 'admin' && (
+                <button
+                  onClick={() => handleNavigate('database')}
+                  title="Importar e gerenciar planilhas de dados"
+                  className={`flex flex-col items-center justify-center p-5 rounded-2xl transition-all active:scale-95 col-span-2 ${
+                    currentView === 'database' 
+                      ? 'bg-white text-indigo-700 shadow-xl ring-2 ring-white' 
+                      : 'bg-indigo-800/50 text-indigo-100 border border-indigo-500/30'
+                  }`}
+                >
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-2 ${currentView === 'database' ? 'bg-indigo-50' : 'bg-indigo-700/50'}`}>
+                    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-black uppercase tracking-widest">Base de Dados</span>
+                  <span className={`text-[8px] mt-1 font-bold uppercase tracking-tighter opacity-60 ${currentView === 'database' ? 'text-indigo-500' : 'text-indigo-200'}`}>Gerenciar planilhas</span>
+                </button>
+              )}
+            </div>
+
+            <div className="pt-6 border-t border-indigo-600/50 flex items-center justify-between px-2">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-indigo-800 rounded-2xl flex items-center justify-center text-lg font-black ring-2 ring-indigo-400/30 shadow-inner">
                   {user.username.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <p className="text-sm font-bold leading-none">{user.username}</p>
-                  <p className="text-[10px] uppercase font-bold text-indigo-300 tracking-widest">{user.role}</p>
+                  <p className="text-base font-black leading-none">{user.username}</p>
+                  <p className="text-[10px] uppercase font-black text-indigo-300 tracking-[0.2em] mt-1">{user.role}</p>
                 </div>
               </div>
               <button
                 onClick={onLogout}
-                className="bg-red-500/20 hover:bg-red-500 text-red-100 p-2 rounded-lg transition-all"
+                className="bg-red-500/20 hover:bg-red-500 text-red-100 p-3 rounded-2xl transition-all border border-red-500/30 active:scale-90"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
               </button>

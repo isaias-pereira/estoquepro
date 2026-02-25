@@ -3,12 +3,13 @@ import React, { useState } from 'react';
 import { User } from '../types';
 
 interface LoginProps {
-  onLogin: (user: User) => void;
+  onLogin: (user: User, rememberMe: boolean) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -17,9 +18,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     // Pre-registered credentials
     if (username === 'admin' && password === '123') {
-      onLogin({ username: 'Administrador', role: 'admin' });
+      onLogin({ username: 'Administrador', role: 'admin' }, rememberMe);
     } else if (username === 'user' && password === '123') {
-      onLogin({ username: 'Usuário Comum', role: 'user' });
+      onLogin({ username: 'Usuário Comum', role: 'user' }, rememberMe);
     } else {
       setError('Usuário ou senha inválidos.');
     }
@@ -83,6 +84,19 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               className={inputClasses}
               placeholder="******"
             />
+          </div>
+
+          <div className="flex items-center">
+            <input
+              id="remember-me"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer"
+            />
+            <label htmlFor="remember-me" className="ml-2 block text-xs font-bold text-slate-600 uppercase tracking-widest cursor-pointer">
+              Relembrar-me
+            </label>
           </div>
 
           <div className="pt-2">

@@ -10,6 +10,9 @@ import Inventory from './components/Inventory';
 const STORAGE_KEY_CONSULTATION = 'estoque_pro_consultation_base';
 const STORAGE_KEY_INVENTORY = 'estoque_pro_inventory_base';
 const STORAGE_KEY_LAST_UPDATE = 'estoque_pro_last_update';
+const STORAGE_KEY_SESSION = 'estoque_pro_session';
+
+const SESSION_EXPIRATION_MS = 4 * 60 * 60 * 1000; // 4 hours
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -27,20 +30,40 @@ const App: React.FC = () => {
     const savedConsultation = localStorage.getItem(STORAGE_KEY_CONSULTATION);
     const savedInventory = localStorage.getItem(STORAGE_KEY_INVENTORY);
     const savedLastUpdate = localStorage.getItem(STORAGE_KEY_LAST_UPDATE);
+    const savedSession = localStorage.getItem(STORAGE_KEY_SESSION);
 
     if (savedConsultation) setConsultationBase(JSON.parse(savedConsultation));
     if (savedInventory) setInventoryList(JSON.parse(savedInventory));
     if (savedLastUpdate) setLastUpdateConsultation(savedLastUpdate);
+
+    if (savedSession) {
+      const session = JSON.parse(savedSession);
+      const now = Date.now();
+      if (now - session.timestamp < SESSION_EXPIRATION_MS) {
+        setUser(session.user);
+      } else {
+        localStorage.removeItem(STORAGE_KEY_SESSION);
+      }
+    }
   }, []);
 
-  const handleLogin = (userData: User) => {
+  const handleLogin = (userData: User, rememberMe: boolean) => {
     setUser(userData);
     setCurrentView('consulta');
+
+    if (rememberMe) {
+      const session = {
+        user: userData,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(session));
+    }
   };
 
   const handleLogout = () => {
     setUser(null);
     setCurrentView('consulta');
+    localStorage.removeItem(STORAGE_KEY_SESSION);
     // Note: We don't clear the database on logout so it remains available for the next user
   };
 

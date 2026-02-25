@@ -37,10 +37,33 @@ const Database: React.FC<DatabaseProps> = ({ onUploadConsultation, onUploadInven
       const reader = new FileReader();
       reader.onload = (e) => {
         const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: 'binary' });
+        
+        // Suppress noisy ODS warnings from SheetJS
+        const oldConsoleError = console.error;
+        const oldConsoleWarn = console.warn;
+        console.error = () => {};
+        console.warn = () => {};
+        
+        let workbook;
+        try {
+          workbook = XLSX.read(data, { 
+            type: 'array',
+            cellStyles: false,
+            cellNF: false,
+            cellDates: true
+          });
+        } finally {
+          console.error = oldConsoleError;
+          console.warn = oldConsoleWarn;
+        }
+
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
-        const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { 
+          header: 1, 
+          raw: true,
+          defval: ''
+        });
 
         if (rows.length === 0) {
           setStatus({ type: 'error', message: 'A planilha está vazia.', target: type });
@@ -49,7 +72,18 @@ const Database: React.FC<DatabaseProps> = ({ onUploadConsultation, onUploadInven
         }
 
         const validRows = rows.filter(r => r.length > 0);
-        const requiredCols = type === 'consult' ? 3 : 4;
+        
+        // Skip header if the first row contains non-numeric values in numeric columns
+        let dataRows = validRows;
+        if (validRows.length > 0) {
+          const firstRow = validRows[0];
+          const isHeader = isNaN(Number(firstRow[2])) || isNaN(Number(firstRow[3]));
+          if (isHeader) {
+            dataRows = validRows.slice(1);
+          }
+        }
+
+        const requiredCols = 4;
         
         if (validRows.length > 0 && validRows[0].length < requiredCols) {
           setStatus({ 
@@ -62,26 +96,36 @@ const Database: React.FC<DatabaseProps> = ({ onUploadConsultation, onUploadInven
         }
 
         if (type === 'consult') {
-          const formattedData: Product[] = validRows.map(row => ({
-            ean: String(row[0] || '').trim(),
-            codigo: String(row[1] || '').trim(),
-            descricao: String(row[2] || '').trim()
-          }));
+          const formattedData: Product[] = dataRows.map(row => {
+            const estoqueStr = String(row[2] || '0').replace(',', '.');
+            const precoStr = String(row[3] || '0').replace(',', '.');
+            
+            return {
+              ean: String(row[0] || '').trim(),
+              codigo: String(row[0] || '').trim(),
+              descricao: String(row[1] || '').trim(),
+              estoque: parseFloat(estoqueStr) || 0,
+              preco: parseFloat(precoStr) || 0
+            };
+          });
           onUploadConsultation(formattedData);
           setStatus({ type: 'success', message: `Base de consulta atualizada! ${formattedData.length} registros.`, target: type });
         } else {
-          const formattedData: InventoryItem[] = validRows.map(row => ({
-            ean: String(row[0] || '').trim(),
-            codigo: String(row[1] || '').trim(),
-            descricao: String(row[2] || '').trim(),
-            quantidade: Number(row[3]) || 0
-          }));
+          const formattedData: InventoryItem[] = dataRows.map(row => {
+            const qtdStr = String(row[3] || '0').replace(',', '.');
+            return {
+              ean: String(row[0] || '').trim(),
+              codigo: String(row[1] || '').trim(),
+              descricao: String(row[2] || '').trim(),
+              quantidade: parseFloat(qtdStr) || 0
+            };
+          });
           onUploadInventory(formattedData);
           setStatus({ type: 'success', message: `Inventário carregado! ${formattedData.length} itens contados.`, target: type });
         }
         setLoading(null);
       };
-      reader.readAsBinaryString(file);
+      reader.readAsArrayBuffer(file);
     } catch (err) {
       setStatus({ type: 'error', message: 'Erro ao processar arquivo.', target: type });
       setLoading(null);
@@ -121,7 +165,7 @@ const Database: React.FC<DatabaseProps> = ({ onUploadConsultation, onUploadInven
                    onClick={() => fileConsultRef.current?.click()}>
                 <input type="file" ref={fileConsultRef} onChange={(e) => handleFileChange(e, 'consult')} accept=".csv, .xlsx, .xls, .ods" className="hidden" />
                 <p className="text-sm font-bold text-slate-700">{fileConsult ? fileConsult.name : 'Selecionar Base de Consulta'}</p>
-                <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-widest font-bold">EAN, CÓDIGO, DESCRIÇÃO</p>
+                <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-widest font-bold">EAN, DESCRIÇÃO, ESTOQUE, PREÇO</p>
               </div>
               <button
                 onClick={() => fileConsult && processFile(fileConsult, 'consult')}
@@ -133,11 +177,12 @@ const Database: React.FC<DatabaseProps> = ({ onUploadConsultation, onUploadInven
             </div>
             
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Estrutura Esperada (3 Colunas)</h4>
-              <div className="grid grid-cols-3 gap-1">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Estrutura Esperada (4 Colunas)</h4>
+              <div className="grid grid-cols-4 gap-1">
                 <div className="bg-white p-2 rounded border border-slate-200 text-center text-[10px] font-bold">EAN</div>
-                <div className="bg-white p-2 rounded border border-slate-200 text-center text-[10px] font-bold">Código</div>
                 <div className="bg-white p-2 rounded border border-slate-200 text-center text-[10px] font-bold">Descrição</div>
+                <div className="bg-white p-2 rounded border border-slate-200 text-center text-[10px] font-bold">Estoque</div>
+                <div className="bg-white p-2 rounded border border-slate-200 text-center text-[10px] font-bold">Preço</div>
               </div>
             </div>
           </div>

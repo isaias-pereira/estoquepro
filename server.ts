@@ -29,18 +29,46 @@ async function startServer() {
     try {
       const cleanCode = code.trim();
       
-      // Searching by both 'codigo' and 'ean' columns using Supabase client
-      const { data, error } = await supabase
+      // Attempt to fetch with all columns first
+      let response = await supabase
         .from('produto')
-        .select('ean, codigo, descricao')
+        .select('ean, codigo, descricao, preco, estoque')
         .or(`codigo.eq.${cleanCode},ean.eq.${cleanCode}`)
-        .single();
+        .limit(1)
+        .maybeSingle();
+
+      let data = response.data;
+      let error = response.error;
+
+      // If it fails, it might be because 'preco' or 'estoque' columns are missing in Supabase
+      if (error && error.message.includes('column') && (error.message.includes('preco') || error.message.includes('estoque'))) {
+        console.warn("Columns 'preco' or 'estoque' missing in Supabase, falling back to basic columns.");
+        const fallback = await supabase
+          .from('produto')
+          .select('ean, codigo, descricao')
+          .or(`codigo.eq.${cleanCode},ean.eq.${cleanCode}`)
+          .limit(1)
+          .maybeSingle();
+        
+        if (fallback.data) {
+          data = { 
+            ...fallback.data, 
+            preco: 0, 
+            estoque: 0 
+          } as any;
+        } else {
+          data = null;
+        }
+        error = fallback.error;
+      }
 
       if (error) {
-        if (error.code === 'PGRST116') { // No rows found
-          return res.status(404).json({ message: "Produto não encontrado no banco de dados central." });
-        }
-        throw error;
+        console.error("Supabase Query Error:", error);
+        return res.status(500).json({ 
+          error: "Erro na consulta ao banco de dados.",
+          message: error.message,
+          code: error.code
+        });
       }
 
       if (data) {
@@ -48,9 +76,12 @@ async function startServer() {
       } else {
         res.status(404).json({ message: "Produto não encontrado no banco de dados central." });
       }
-    } catch (error) {
-      console.error("Supabase error during product search:", error);
-      res.status(500).json({ error: "Erro interno ao consultar o banco de dados." });
+    } catch (error: any) {
+      console.error("Unexpected error during product search:", error);
+      res.status(500).json({ 
+        error: "Erro interno ao consultar o banco de dados.",
+        details: error.message || "Erro desconhecido"
+      });
     }
   });
 

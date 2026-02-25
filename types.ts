@@ -3,6 +3,8 @@ export interface Product {
   ean: string;
   codigo: string;
   descricao: string;
+  preco?: number;
+  estoque?: number;
 }
 
 export interface InventoryItem extends Product {

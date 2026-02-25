@@ -1,5 +1,5 @@
 {
   "name": "Copy of Estoque Pro",
   "description": "Um sistema profissional de gerenciamento de estoque que permite o login de usuários, upload de planilhas de produtos e consulta rápida de itens por código numérico.",
-  "requestFramePermissions": []
+  "requestFramePermissions": ["camera"]
 }

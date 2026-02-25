@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Product } from '../types';
+import BarcodeScanner from './BarcodeScanner';
 
 interface ConsultationProps {
   inventory: Product[];
@@ -13,36 +14,44 @@ const Consultation: React.FC<ConsultationProps> = ({ inventory, lastUpdate }) =>
   const [searched, setSearched] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchCode) return;
+  const handleSearch = async (e?: React.FormEvent, codeToSearch?: string) => {
+    if (e) e.preventDefault();
+    const code = codeToSearch || searchCode;
+    if (!code) return;
 
     setIsSearching(true);
     setError(null);
     setSearched(false);
 
     try {
-      // Prioridade 1: Busca no Banco de Dados PostgreSQL (Neon)
-      const response = await fetch(`/api/products/${searchCode}`);
-      
-      if (response.ok) {
-        const dbProduct = await response.json();
-        setResult(dbProduct);
+      // Prioridade 1: Busca na planilha de consulta local (Base de Dados enviada)
+      const foundLocally = inventory.find(item => 
+        String(item.codigo) === code || String(item.ean) === code
+      );
+
+      if (foundLocally) {
+        setResult(foundLocally);
         setSearched(true);
       } else {
-        // Prioridade 2: Fallback para a planilha de consulta local
-        const found = inventory.find(item => 
-          String(item.codigo) === searchCode || String(item.ean) === searchCode
-        );
-        setResult(found || null);
-        setSearched(true);
+        // Prioridade 2: Busca no Banco de Dados Central (Supabase) se não encontrar na planilha
+        const response = await fetch(`/api/products/${code}`);
+        
+        if (response.ok) {
+          const dbProduct = await response.json();
+          setResult(dbProduct);
+          setSearched(true);
+        } else {
+          setResult(null);
+          setSearched(true);
+        }
       }
     } catch (err) {
       console.error("Search error:", err);
-      // Fallback em caso de erro de conexão
+      // Fallback final em caso de erro de conexão
       const found = inventory.find(item => 
-        String(item.codigo) === searchCode || String(item.ean) === searchCode
+        String(item.codigo) === code || String(item.ean) === code
       );
       setResult(found || null);
       setSearched(true);
@@ -77,14 +86,24 @@ const Consultation: React.FC<ConsultationProps> = ({ inventory, lastUpdate }) =>
         </div>
         
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-grow">
+          <div className="flex-grow relative">
             <input
               type="text"
               value={searchCode}
               onChange={handleInputChange}
-              className="w-full px-5 py-4 rounded-2xl border border-slate-200 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 outline-none transition-all shadow-sm placeholder:text-slate-400 text-black font-medium"
+              className="w-full px-5 py-4 rounded-2xl border border-slate-200 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 outline-none transition-all shadow-sm placeholder:text-slate-400 text-black font-medium pr-14"
               placeholder="Digite o código ou EAN do produto..."
             />
+            <button
+              type="button"
+              onClick={() => setShowScanner(true)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
+              title="Escanear Código de Barras"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+              </svg>
+            </button>
           </div>
           <button
             type="submit"
@@ -102,6 +121,17 @@ const Consultation: React.FC<ConsultationProps> = ({ inventory, lastUpdate }) =>
             ) : 'Consultar'}
           </button>
         </form>
+
+        {showScanner && (
+          <BarcodeScanner 
+            onScan={(code) => {
+              setSearchCode(code);
+              setShowScanner(false);
+              handleSearch(undefined, code);
+            }}
+            onClose={() => setShowScanner(false)}
+          />
+        )}
       </div>
 
       <div className="min-h-[200px]">
@@ -122,18 +152,37 @@ const Consultation: React.FC<ConsultationProps> = ({ inventory, lastUpdate }) =>
                 <span className="text-xs font-black text-indigo-700 uppercase tracking-widest">Ficha Técnica</span>
               </div>
               <div className="p-10 space-y-8">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Descrição do Item</label>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2 text-slate-400">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h7" />
+                    </svg>
+                    <label className="text-[10px] font-black uppercase tracking-widest">Descrição do Item</label>
+                  </div>
                   <p className="text-3xl font-black text-slate-800 leading-tight">{result.descricao}</p>
                 </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-1 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">EAN (Código de Barras)</label>
-                    <p className="text-xl font-bold text-slate-700">{result.ean}</p>
+                  <div className="group space-y-2 bg-slate-50/50 p-6 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:shadow-md hover:border-emerald-100">
+                    <div className="flex items-center space-x-2 text-slate-400 group-hover:text-emerald-500 transition-colors">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <label className="text-[10px] font-black uppercase tracking-widest">Preço de Venda</label>
+                    </div>
+                    <p className="text-3xl font-black text-emerald-600">
+                      {result.preco ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(result.preco) : 'R$ 0,00'}
+                    </p>
                   </div>
-                  <div className="space-y-1 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Código Interno</label>
-                    <p className="text-xl font-bold text-slate-700">{result.codigo}</p>
+
+                  <div className="group space-y-2 bg-slate-50/50 p-6 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:shadow-md hover:border-indigo-100">
+                    <div className="flex items-center space-x-2 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                      </svg>
+                      <label className="text-[10px] font-black uppercase tracking-widest">Estoque Atual</label>
+                    </div>
+                    <p className="text-3xl font-black text-slate-800">{result.estoque ?? 0}</p>
                   </div>
                 </div>
               </div>

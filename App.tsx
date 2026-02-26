@@ -120,6 +120,17 @@ const App: React.FC = () => {
     });
   };
 
+  const handleUpdateItemQuantity = (codigo: string, newQuantity: number) => {
+    setInventoryList(prev => {
+      const newList = prev.map(i => i.codigo === codigo 
+        ? { ...i, quantidade: newQuantity } 
+        : i
+      );
+      localStorage.setItem(STORAGE_KEY_INVENTORY, JSON.stringify(newList));
+      return newList;
+    });
+  };
+
   const handleClearInventory = () => {
     const clearedList = inventoryList.map(item => ({ ...item, quantidade: 0 }));
     setInventoryList(clearedList);
@@ -161,6 +172,7 @@ const App: React.FC = () => {
                 inventory={inventoryList} 
                 onAdd={handleAddItemToInventory}
                 onUndo={handleUndoLastAddition}
+                onUpdateQuantity={handleUpdateItemQuantity}
                 onClear={handleClearInventory}
               />
             )}

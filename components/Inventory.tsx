@@ -10,10 +10,11 @@ interface InventoryProps {
   inventory: InventoryItem[];
   onAdd: (item: InventoryItem) => void;
   onUndo: (item: InventoryItem, quantity: number) => void;
+  onUpdateQuantity: (codigo: string, newQuantity: number) => void;
   onClear: () => void;
 }
 
-const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onUndo, onClear }) => {
+const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onUndo, onUpdateQuantity, onClear }) => {
   const [searchCode, setSearchCode] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
   const [quantity, setQuantity] = useState<number>(1);
@@ -21,9 +22,12 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onUndo, o
   const [error, setError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [editingSku, setEditingSku] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   const qtyInputRef = useRef<HTMLInputElement>(null);
+  const editInputRef = useRef<HTMLInputElement>(null);
 
   // Initial focus on mount
   useEffect(() => {
@@ -193,6 +197,20 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onUndo, o
     }
   };
 
+  const startEditing = (item: InventoryItem) => {
+    setEditingSku(item.codigo);
+    setEditValue(item.quantidade.toString());
+    setTimeout(() => editInputRef.current?.focus(), 50);
+  };
+
+  const handleSaveEdit = (codigo: string) => {
+    const newVal = parseFloat(editValue.replace(',', '.'));
+    if (!isNaN(newVal)) {
+      onUpdateQuantity(codigo, newVal);
+    }
+    setEditingSku(null);
+  };
+
   const countedList = inventory.filter(item => item.quantidade > 0);
 
   return (
@@ -358,9 +376,26 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onUndo, o
                       </div>
                     </td>
                     <td className="px-8 py-5 text-right">
-                      <span className="inline-block bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl text-lg font-black min-w-[60px] text-center border border-indigo-100 shadow-sm">
-                        {item.quantidade.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
-                      </span>
+                      {editingSku === item.codigo ? (
+                        <input
+                          ref={editInputRef}
+                          type="text"
+                          inputMode="decimal"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onBlur={() => handleSaveEdit(item.codigo)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit(item.codigo)}
+                          className="w-24 px-3 py-2 rounded-xl border border-indigo-300 bg-white text-black font-black outline-none focus:ring-4 focus:ring-indigo-500/10 text-right shadow-inner"
+                        />
+                      ) : (
+                        <span 
+                          onClick={() => startEditing(item)}
+                          className="inline-block bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl text-lg font-black min-w-[60px] text-center border border-indigo-100 shadow-sm cursor-pointer hover:bg-indigo-100 transition-colors"
+                          title="Clique para editar"
+                        >
+                          {item.quantidade.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))

@@ -212,6 +212,7 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onUndo, o
           <div className="flex-grow relative">
             <input
               type="text"
+              inputMode="numeric"
               ref={searchInputRef}
               value={searchCode}
               onChange={(e) => setSearchCode(e.target.value.replace(/\D/g, ''))}

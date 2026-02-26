@@ -94,6 +94,7 @@ const Consultation: React.FC<ConsultationProps> = ({ inventory, lastUpdate }) =>
           <div className={`flex-grow relative ${error ? 'animate-shake' : ''}`}>
             <input
               type="text"
+              inputMode="numeric"
               value={searchCode}
               onChange={handleInputChange}
               className={`w-full px-6 py-4 rounded-2xl border bg-slate-50/50 focus:bg-white focus:ring-8 focus:ring-indigo-500/5 outline-none transition-all shadow-inner placeholder:text-slate-400 text-black font-bold pr-14 ${

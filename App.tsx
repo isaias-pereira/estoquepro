@@ -109,6 +109,17 @@ const App: React.FC = () => {
     });
   };
 
+  const handleUndoLastAddition = (item: InventoryItem, quantity: number) => {
+    setInventoryList(prev => {
+      const newList = prev.map(i => i.codigo === item.codigo 
+        ? { ...i, quantidade: Math.max(0, i.quantidade - quantity) } 
+        : i
+      );
+      localStorage.setItem(STORAGE_KEY_INVENTORY, JSON.stringify(newList));
+      return newList;
+    });
+  };
+
   const handleClearInventory = () => {
     const clearedList = inventoryList.map(item => ({ ...item, quantidade: 0 }));
     setInventoryList(clearedList);
@@ -127,8 +138,8 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative" style={globalBackgroundStyle}>
-      <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-[2px] z-0"></div>
+    <div className="min-h-screen flex flex-col relative selection:bg-indigo-500 selection:text-white" style={globalBackgroundStyle}>
+      <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-[3px] z-0"></div>
 
       <Header 
         user={user} 
@@ -138,8 +149,8 @@ const App: React.FC = () => {
       />
       
       <div className="flex-grow flex flex-col relative z-10">
-        <main className="flex-grow py-12">
-          <div className="container mx-auto px-4 max-w-4xl">
+        <main className="flex-grow py-6 sm:py-12">
+          <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
             {currentView === 'consulta' && (
               <Consultation inventory={consultationBase} lastUpdate={lastUpdateConsultation} />
             )}
@@ -149,6 +160,7 @@ const App: React.FC = () => {
                 base={consultationBase} 
                 inventory={inventoryList} 
                 onAdd={handleAddItemToInventory}
+                onUndo={handleUndoLastAddition}
                 onClear={handleClearInventory}
               />
             )}

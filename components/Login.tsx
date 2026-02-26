@@ -30,91 +30,91 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat px-4 relative"
+      className="min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat px-4 relative selection:bg-indigo-500 selection:text-white"
       style={{ 
         backgroundImage: 'url("https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=2000")',
       }}
     >
       {/* Overlay para contraste */}
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]"></div>
+      <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-[4px]"></div>
 
-      <div className="max-w-md w-full bg-slate-50/70 rounded-3xl shadow-2xl shadow-black/30 overflow-hidden border border-white/30 relative z-10 backdrop-blur-xl">
-        <div className="bg-indigo-700/90 p-10 text-white text-center relative overflow-hidden">
+      <div className="max-w-md w-full bg-white/90 rounded-[3rem] shadow-2xl shadow-black/40 overflow-hidden border border-white/20 relative z-10 backdrop-blur-2xl animate-fadeIn">
+        <div className="bg-indigo-700/90 p-12 text-white text-center relative overflow-hidden border-b border-white/10">
           {/* Efeito decorativo no header */}
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+          <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
           
-          <div className="bg-white/20 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-md shadow-inner">
-            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          <div className="bg-white p-2 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl w-16 h-16">
+            <svg className="w-10 h-10 text-indigo-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
           </div>
           <h2 className="text-3xl font-black tracking-tighter uppercase">Estoque Pro</h2>
-          <p className="text-indigo-100/90 mt-2 text-sm font-medium">Gestão Inteligente para Varejo</p>
+          <p className="text-indigo-100/80 mt-2 text-[10px] font-black uppercase tracking-[0.3em]">Gestão Inteligente</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-10 space-y-6">
+        <form onSubmit={handleSubmit} className="p-8 sm:p-12 space-y-8">
           {error && (
-            <div className="bg-red-50/80 text-red-600 p-4 rounded-xl text-sm border border-red-100 flex items-center animate-shake backdrop-blur-sm">
-              <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <div className="bg-red-50 text-red-600 p-5 rounded-2xl text-xs font-black border border-red-100 flex items-center animate-shake shadow-sm">
+              <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               {error}
             </div>
           )}
 
-          <div>
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 ml-1">Acesso do Usuário</label>
+          <div className="space-y-2">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] ml-2">Acesso do Usuário</label>
             <input
               type="text"
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className={inputClasses}
-              placeholder="Acesso"
+              className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 focus:bg-white focus:ring-8 focus:ring-indigo-500/5 focus:border-indigo-400 transition-all outline-none shadow-inner placeholder:text-slate-300 text-black font-bold"
+              placeholder="Usuário"
             />
           </div>
 
-          <div>
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 ml-1">Senha Privada</label>
+          <div className="space-y-2">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] ml-2">Senha Privada</label>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={inputClasses}
-              placeholder="******"
+              className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 focus:bg-white focus:ring-8 focus:ring-indigo-500/5 focus:border-indigo-400 transition-all outline-none shadow-inner placeholder:text-slate-300 text-black font-bold"
+              placeholder="••••••"
             />
           </div>
 
-          <div className="flex items-center">
+          <div className="flex items-center px-2">
             <input
               id="remember-me"
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer"
+              className="w-5 h-5 text-indigo-600 border-slate-200 rounded-lg focus:ring-indigo-500 cursor-pointer shadow-sm"
             />
-            <label htmlFor="remember-me" className="ml-2 block text-xs font-bold text-slate-600 uppercase tracking-widest cursor-pointer">
-              Relembrar-me
+            <label htmlFor="remember-me" className="ml-3 block text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] cursor-pointer">
+              Manter conectado
             </label>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-4">
             <button
               type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 px-4 rounded-2xl transition-all shadow-xl shadow-indigo-500/30 flex items-center justify-center space-x-2 active:scale-[0.98] uppercase tracking-widest text-sm"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-5 px-4 rounded-2xl transition-all shadow-2xl shadow-indigo-200 flex items-center justify-center space-x-3 active:scale-95 uppercase tracking-[0.2em] text-xs"
             >
               <span>Entrar no Sistema</span>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </button>
           </div>
         </form>
         
-        <div className="px-10 pb-8 text-center">
-          <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">
-            Logística e Distribuição Alimentícia
+        <div className="px-12 pb-10 text-center">
+          <p className="text-slate-300 text-[9px] uppercase font-black tracking-[0.4em]">
+            Logística & Distribuição
           </p>
         </div>
       </div>

@@ -271,7 +271,9 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onUndo, o
                   <svg className="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
-                  <p className="text-[10px] font-black uppercase tracking-widest">Contagem acumulada: {selectedProduct.quantidade}</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest">
+                    Contagem acumulada: {selectedProduct.quantidade.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
+                  </p>
                 </div>
               </div>
               <form onSubmit={handleAddCount} className="flex gap-3 sm:gap-4">
@@ -356,7 +358,7 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onUndo, o
                     </td>
                     <td className="px-8 py-5 text-right">
                       <span className="inline-block bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl text-lg font-black min-w-[60px] text-center border border-indigo-100 shadow-sm">
-                        {item.quantidade}
+                        {item.quantidade.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
                       </span>
                     </td>
                   </tr>

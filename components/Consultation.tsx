@@ -161,41 +161,58 @@ const Consultation: React.FC<ConsultationProps> = ({ inventory, lastUpdate }) =>
         ) : searched ? (
           result ? (
             <div className="bg-white/95 backdrop-blur-md rounded-[2.5rem] shadow-2xl border border-white/20 overflow-hidden animate-slideUp">
-              <div className="bg-indigo-50/50 px-8 py-5 border-b border-slate-100 flex justify-between items-center">
-                <span className="text-[10px] font-black text-indigo-700 uppercase tracking-[0.2em]">Ficha Técnica do Produto</span>
-              </div>
-              <div className="p-8 sm:p-12 space-y-10">
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2 text-indigo-400">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 6h16M4 12h16M4 18h7" />
-                    </svg>
-                    <label className="text-[10px] font-black uppercase tracking-[0.25em]">Descrição do Item</label>
+              <div className="p-8 sm:p-12 space-y-12">
+                {/* Header & Description */}
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <span className="h-px w-8 bg-indigo-200"></span>
+                    <span className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em]">Ficha Técnica</span>
+                    <span className="h-px flex-grow bg-indigo-50"></span>
                   </div>
-                  <p className="text-3xl sm:text-4xl font-black text-slate-900 leading-[1.1] tracking-tight">{result.descricao}</p>
+                  <h2 className="text-3xl sm:text-5xl font-black text-slate-900 leading-[1.1] tracking-tight">
+                    {result.descricao}
+                  </h2>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="group space-y-3 bg-emerald-50/30 p-8 rounded-[2rem] border border-emerald-100/50 transition-all hover:bg-white hover:shadow-xl hover:border-emerald-200">
-                    <div className="flex items-center space-x-2 text-emerald-500">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {/* Main Metrics */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-12">
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 text-slate-400">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <label className="text-[10px] font-black uppercase tracking-[0.25em]">Preço de Venda</label>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em]">Preço de Venda</label>
                     </div>
-                    <p className="text-4xl font-black text-emerald-600 tracking-tight">
+                    <p className="text-5xl font-black text-emerald-600 tracking-tighter">
                       {result.preco ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(result.preco) : 'R$ 0,00'}
                     </p>
                   </div>
 
-                  <div className="group space-y-3 bg-indigo-50/30 p-8 rounded-[2rem] border border-indigo-100/50 transition-all hover:bg-white hover:shadow-xl hover:border-indigo-200">
-                    <div className="flex items-center space-x-2 text-indigo-500">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 text-slate-400">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                       </svg>
-                      <label className="text-[10px] font-black uppercase tracking-[0.25em]">Estoque Atual</label>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em]">Estoque Disponível</label>
                     </div>
-                    <p className="text-4xl font-black text-slate-900 tracking-tight">{result.estoque ?? 0}</p>
+                    <div className="flex items-baseline space-x-2">
+                      <p className="text-5xl font-black text-slate-900 tracking-tighter">
+                        {(result.estoque ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}
+                      </p>
+                      <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Unidades</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Secondary Info */}
+                <div className="pt-8 border-t border-slate-100 flex flex-wrap gap-6">
+                  <div className="flex items-center space-x-3 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">EAN</span>
+                    <span className="text-xs font-bold text-slate-700">{result.ean}</span>
+                  </div>
+                  <div className="flex items-center space-x-3 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Código</span>
+                    <span className="text-xs font-bold text-slate-700">{result.codigo}</span>
                   </div>
                 </div>
               </div>

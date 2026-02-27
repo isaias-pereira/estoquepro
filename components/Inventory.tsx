@@ -43,7 +43,7 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onUndo, o
     setIsSearching(true);
     
     try {
-      // Prioridade: Busca no Banco de Dados PostgreSQL (Neon)
+      // Prioridade: Busca no Banco de Dados PostgreSQL (Neon/Supabase)
       const response = await fetch(`/api/products/${code}`);
       
       if (response.ok) {
@@ -60,6 +60,8 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onUndo, o
         setQuantity(1);
         setTimeout(() => qtyInputRef.current?.focus(), 50);
       } else {
+        const errorData = await response.json().catch(() => ({}));
+        
         // Fallback 1: Busca na planilha de base enviada (Base de Dados)
         const foundInBase = base.find(p => String(p.codigo) === code || String(p.ean) === code);
         
@@ -83,7 +85,7 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onUndo, o
             setTimeout(() => qtyInputRef.current?.focus(), 50);
           } else {
             setSelectedProduct(null);
-            setError('Produto não encontrado no banco de dados nem na base de dados enviada.');
+            setError(errorData.error || errorData.message || 'Produto não encontrado no banco de dados nem na base local.');
             searchInputRef.current?.select();
           }
         }
@@ -384,8 +386,11 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onUndo, o
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
                           onBlur={() => handleSaveEdit(item.codigo)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit(item.codigo)}
-                          className="w-24 px-3 py-2 rounded-xl border border-indigo-300 bg-white text-black font-black outline-none focus:ring-4 focus:ring-indigo-500/10 text-right shadow-inner"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveEdit(item.codigo);
+                            if (e.key === 'Escape') setEditingSku(null);
+                          }}
+                          className="w-24 px-3 py-2 rounded-xl border-2 border-indigo-500 bg-white text-black font-black outline-none text-right shadow-lg"
                         />
                       ) : (
                         <span 

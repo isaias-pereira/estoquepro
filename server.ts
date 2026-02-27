@@ -64,6 +64,12 @@ async function startServer() {
 
       if (error) {
         console.error("Supabase Query Error:", error);
+        if (error.code === 'PGRST116' || error.message.includes('relation "produto" does not exist')) {
+          return res.status(404).json({ 
+            error: "Base de dados não encontrada ou tabela 'produto' não existe no Supabase.",
+            message: "Por favor, crie a tabela 'produto' no seu painel do Supabase."
+          });
+        }
         return res.status(500).json({ 
           error: "Erro na consulta ao banco de dados.",
           message: error.message,
@@ -82,6 +88,108 @@ async function startServer() {
         error: "Erro interno ao consultar o banco de dados.",
         details: error.message || "Erro desconhecido"
       });
+    }
+  });
+
+  // API Route to create a new user in Supabase
+  app.post("/api/users", async (req, res) => {
+    const { username, password, role } = req.body;
+
+    if (!username || !password || !role) {
+      return res.status(400).json({ error: "Todos os campos são obrigatórios." });
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('users_management')
+        .insert([{ username, password, role }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Supabase Insert Error:", error);
+        return res.status(500).json({ 
+          error: "Erro ao criar usuário no banco de dados.",
+          message: error.message,
+          code: error.code
+        });
+      }
+
+      res.status(201).json(data);
+    } catch (error: any) {
+      console.error("Unexpected error during user creation:", error);
+      res.status(500).json({ 
+        error: "Erro interno ao criar usuário.",
+        details: error.message || "Erro desconhecido"
+      });
+    }
+  });
+
+  // API Route to list users (for admin view)
+  app.get("/api/users", async (req, res) => {
+    try {
+      const { data, error } = await supabase
+        .from('users_management')
+        .select('id, username, role, created_at')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Supabase Fetch Error:", error);
+        return res.status(500).json({ 
+          error: "Erro ao buscar usuários.",
+          message: error.message
+        });
+      }
+
+      res.json(data);
+    } catch (error: any) {
+      console.error("Unexpected error during user fetch:", error);
+      res.status(500).json({ 
+        error: "Erro interno ao buscar usuários."
+      });
+    }
+  });
+
+  // API Route for Login Authentication
+  app.post("/api/auth/login", async (req, res) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ error: "Usuário e senha são obrigatórios." });
+    }
+
+    try {
+      // Check hardcoded defaults first for safety
+      if (username === 'admin' && password === '123') {
+        return res.json({ username: 'Administrador', role: 'admin' });
+      }
+      if (username === 'user' && password === '123') {
+        return res.json({ username: 'Usuário Comum', role: 'user' });
+      }
+
+      // Check Supabase
+      const { data, error } = await supabase
+        .from('users_management')
+        .select('username, role, password')
+        .eq('username', username)
+        .eq('password', password)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Supabase Auth Error:", error);
+        return res.status(500).json({ error: "Erro na autenticação." });
+      }
+
+      if (data) {
+        // Remove password from response
+        const { password: _, ...user } = data;
+        res.json(user);
+      } else {
+        res.status(401).json({ error: "Usuário ou senha inválidos." });
+      }
+    } catch (error: any) {
+      console.error("Unexpected error during login:", error);
+      res.status(500).json({ error: "Erro interno no servidor." });
     }
   });
 

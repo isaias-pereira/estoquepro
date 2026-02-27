@@ -12,17 +12,33 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
-    // Pre-registered credentials
-    if (username === 'admin' && password === '123') {
-      onLogin({ username: 'Administrador', role: 'admin' }, rememberMe);
-    } else if (username === 'user' && password === '123') {
-      onLogin({ username: 'Usuário Comum', role: 'user' }, rememberMe);
-    } else {
-      setError('Usuário ou senha inválidos.');
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        onLogin(userData, rememberMe);
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Usuário ou senha inválidos.');
+      }
+    } catch (err) {
+      setError('Erro de conexão com o servidor.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -102,12 +118,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <div className="pt-4">
             <button
               type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-5 px-4 rounded-2xl transition-all shadow-2xl shadow-indigo-200 flex items-center justify-center space-x-3 active:scale-95 uppercase tracking-[0.2em] text-xs"
+              disabled={loading}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-5 px-4 rounded-2xl transition-all shadow-2xl shadow-indigo-200 flex items-center justify-center space-x-3 active:scale-95 uppercase tracking-[0.2em] text-xs disabled:opacity-50"
             >
-              <span>Entrar no Sistema</span>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
+              <span>{loading ? 'Autenticando...' : 'Entrar no Sistema'}</span>
+              {!loading && (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              )}
             </button>
           </div>
         </form>

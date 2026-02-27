@@ -47,6 +47,8 @@ const Consultation: React.FC<ConsultationProps> = ({ inventory, lastUpdate }) =>
           setResult(dbProduct);
           setSearched(true);
         } else {
+          const errorData = await response.json().catch(() => ({}));
+          setError(errorData.error || errorData.message || 'Produto não encontrado.');
           setResult(null);
           setSearched(true);
         }

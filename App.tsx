@@ -6,6 +6,7 @@ import Header from './components/Header';
 import Consultation from './components/Consultation';
 import Database from './components/Database';
 import Inventory from './components/Inventory';
+import UserManagement from './components/UserManagement';
 
 const STORAGE_KEY_CONSULTATION = 'estoque_pro_consultation_base';
 const STORAGE_KEY_INVENTORY = 'estoque_pro_inventory_base';
@@ -175,6 +176,10 @@ const App: React.FC = () => {
                 onUpdateQuantity={handleUpdateItemQuantity}
                 onClear={handleClearInventory}
               />
+            )}
+
+            {currentView === 'usuarios' && user.role === 'admin' && (
+              <UserManagement />
             )}
             
             {currentView === 'database' && user.role === 'admin' && (

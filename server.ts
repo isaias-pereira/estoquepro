@@ -203,10 +203,21 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), "dist");
+    // In production, serve from the 'dist' folder
+    const distPath = path.resolve(process.cwd(), "dist");
+    console.log(`Serving static files from: ${distPath}`);
+    
     app.use(express.static(distPath));
+    
+    // SPA fallback: serve index.html for any unknown routes
     app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
+      const indexPath = path.join(distPath, "index.html");
+      res.sendFile(indexPath, (err) => {
+        if (err) {
+          console.error("Error sending index.html:", err);
+          res.status(500).send("Erro ao carregar o aplicativo. Verifique se o build foi realizado.");
+        }
+      });
     });
   }
 

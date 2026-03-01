@@ -7,7 +7,7 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "sb_publishable_1MlPW
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-async function startServer() {
+async function createServer() {
   const app = express();
   const PORT = 3000;
 
@@ -215,18 +215,33 @@ async function startServer() {
       res.sendFile(indexPath, (err) => {
         if (err) {
           console.error("Error sending index.html:", err);
+          // Fallback if index.html is missing
           res.status(500).send("Erro ao carregar o aplicativo. Verifique se o build foi realizado.");
         }
       });
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  return app;
+}
+
+// For local development and the current platform
+if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
+  createServer().then(app => {
+    app.listen(3000, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:3000`);
+    });
+  }).catch(err => {
+    console.error("Failed to start server:", err);
+    process.exit(1);
   });
 }
 
-startServer().catch(err => {
-  console.error("Failed to start server:", err);
-  process.exit(1);
-});
+// Export for Vercel serverless functions
+let cachedApp: any = null;
+export default async (req: any, res: any) => {
+  if (!cachedApp) {
+    cachedApp = await createServer();
+  }
+  return cachedApp(req, res);
+};

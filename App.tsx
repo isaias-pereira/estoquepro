@@ -79,11 +79,6 @@ const App: React.FC = () => {
     localStorage.setItem(STORAGE_KEY_LAST_UPDATE, formattedDate);
   }, []);
 
-  const handleUpdateInventory = useCallback((data: InventoryItem[]) => {
-    setInventoryList(data);
-    localStorage.setItem(STORAGE_KEY_INVENTORY, JSON.stringify(data));
-  }, []);
-
   const handleClearDatabase = useCallback(() => {
     setConsultationBase([]);
     setInventoryList([]);
@@ -185,7 +180,6 @@ const App: React.FC = () => {
             {currentView === 'database' && user.role === 'admin' && (
               <Database 
                 onUploadConsultation={handleUpdateConsultation} 
-                onUploadInventory={handleUpdateInventory}
                 onClearDatabase={handleClearDatabase}
                 onBack={() => setCurrentView('consulta')} 
               />

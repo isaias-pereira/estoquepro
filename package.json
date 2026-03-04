@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
     "@supabase/supabase-js": "^2.97.0",
     "@types/express": "^5.0.6",
     "@types/pg": "^8.16.0",

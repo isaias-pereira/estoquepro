@@ -1,11 +1,14 @@
 import express from "express";
 import path from "path";
 import { createClient } from "@supabase/supabase-js";
+import { neon } from "@neondatabase/serverless";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://lleyeblqbpkjgabytmyq.supabase.co";
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "sb_publishable_1MlPWWhnBpjRRJ-IycyT6Q_SKZyEvDV";
+const NEON_DB_URL = 'postgresql://neondb_owner:npg_3eSWoBOkXqb1@ep-sparkling-hall-acmrc7fp-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sql = neon(NEON_DB_URL);
 
 async function createServer() {
   const app = express();
@@ -29,7 +32,26 @@ async function createServer() {
     try {
       const cleanCode = code.trim();
       
-      // Attempt to fetch with all columns first
+      // Priority 1: Search in Neon Database (as requested)
+      try {
+        const neonResults = await sql`
+          SELECT ean, codigo, descricao FROM produto WHERE ean = ${cleanCode} OR codigo = ${cleanCode} LIMIT 1
+        `;
+
+        if (neonResults && neonResults.length > 0) {
+          const product = neonResults[0];
+          return res.json({
+            ...product,
+            preco: (product as any).preco || 0,
+            estoque: (product as any).estoque || 0
+          });
+        }
+      } catch (neonErr) {
+        console.error("Neon Query Error:", neonErr);
+        // Continue to Supabase if Neon fails
+      }
+
+      // Priority 2: Search in Supabase (Fallback)
       let response = await supabase
         .from('produto')
         .select('ean, codigo, descricao, preco, estoque')
@@ -147,6 +169,58 @@ async function createServer() {
       res.status(500).json({ 
         error: "Erro interno ao buscar usuários."
       });
+    }
+  });
+
+  // API Route to check Supabase connection and table status
+  app.get("/api/admin/db-status", async (req, res) => {
+    try {
+      const { error: prodError } = await supabase.from('produto').select('count', { count: 'exact', head: true });
+      const { error: userError } = await supabase.from('users_management').select('count', { count: 'exact', head: true });
+      
+      const status = {
+        connected: true,
+        tables: {
+          produto: !prodError || !prodError.message.includes('relation "produto" does not exist'),
+          users_management: !userError || !userError.message.includes('relation "users_management" does not exist')
+        },
+        errors: {
+          produto: prodError ? prodError.message : null,
+          users_management: userError ? userError.message : null
+        }
+      };
+      
+      res.json(status);
+    } catch (err: any) {
+      res.status(500).json({ connected: false, error: err.message });
+    }
+  });
+
+  // API Route to bulk upload products to Supabase
+  app.post("/api/admin/sync-products", async (req, res) => {
+    const { products } = req.body;
+    
+    if (!Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({ error: "Nenhum produto enviado para sincronização." });
+    }
+
+    try {
+      // Supabase insert/upsert
+      const { data, error } = await supabase
+        .from('produto')
+        .upsert(products, { onConflict: 'ean' });
+
+      if (error) {
+        console.error("Supabase Sync Error:", error);
+        return res.status(500).json({ 
+          error: "Erro ao sincronizar com Supabase.",
+          message: error.message
+        });
+      }
+
+      res.json({ success: true, count: products.length });
+    } catch (err: any) {
+      res.status(500).json({ error: "Erro interno na sincronização.", details: err.message });
     }
   });
 

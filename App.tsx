@@ -7,6 +7,7 @@ import Consultation from './components/Consultation';
 import Database from './components/Database';
 import Inventory from './components/Inventory';
 import UserManagement from './components/UserManagement';
+import Notes from './components/Notes';
 
 const STORAGE_KEY_CONSULTATION = 'estoque_pro_consultation_base';
 const STORAGE_KEY_INVENTORY = 'estoque_pro_inventory_base';
@@ -175,6 +176,10 @@ const App: React.FC = () => {
 
             {currentView === 'usuarios' && user.role === 'admin' && (
               <UserManagement />
+            )}
+
+            {currentView === 'notes' && (
+              <Notes />
             )}
             
             {currentView === 'database' && user.role === 'admin' && (

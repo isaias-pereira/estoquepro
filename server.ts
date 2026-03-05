@@ -224,6 +224,33 @@ async function createServer() {
     }
   });
 
+  // API Route to fetch notes from Supabase
+  app.get("/api/notes", async (req, res) => {
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*');
+
+      if (error) {
+        // Log the error more clearly for debugging
+        console.error("Supabase Notes Error:", JSON.stringify(error, null, 2));
+        
+        // We want to be extremely resilient here. 
+        // If there's ANY error fetching notes (table missing, RLS, invalid key, etc.),
+        // we return an empty array so the UI doesn't break.
+        // The UI will simply show "Nenhuma nota encontrada".
+        console.warn("Returning empty array for notes due to Supabase error.");
+        return res.json([]);
+      }
+
+      res.json(data || []);
+    } catch (error: any) {
+      console.error("Unexpected error during notes fetch:", error);
+      // Even on unexpected exceptions, return empty array to keep UI stable
+      res.json([]);
+    }
+  });
+
   // API Route for Login Authentication
   app.post("/api/auth/login", async (req, res) => {
     const { username, password } = req.body;

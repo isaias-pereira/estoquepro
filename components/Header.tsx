@@ -49,6 +49,15 @@ const Header: React.FC<HeaderProps> = ({ user, currentView, onNavigate, onLogout
             >
               Inventário
             </button>
+
+            <button
+              onClick={() => onNavigate('notes')}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                currentView === 'notes' ? 'bg-white text-indigo-700 shadow-md' : 'text-indigo-100 hover:bg-indigo-600'
+              }`}
+            >
+              Notas
+            </button>
             
             {user.role === 'admin' && (
               <button
@@ -140,6 +149,22 @@ const Header: React.FC<HeaderProps> = ({ user, currentView, onNavigate, onLogout
                   </svg>
                 </div>
                 <span className="text-[10px] font-black uppercase tracking-wider">Inventário</span>
+              </button>
+
+              <button
+                onClick={() => handleNavigate('notes')}
+                className={`flex flex-col items-center justify-center p-4 rounded-2xl transition-all active:scale-95 ${
+                  currentView === 'notes' 
+                    ? 'bg-white text-indigo-700 shadow-xl' 
+                    : 'bg-white/10 text-white border border-white/10 backdrop-blur-sm'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 ${currentView === 'notes' ? 'bg-indigo-50' : 'bg-white/10'}`}>
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider">Notas</span>
               </button>
 
               {user.role === 'admin' && (

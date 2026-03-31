@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Product, InventoryItem } from '../types';
+import BarcodeScanner from './BarcodeScanner';
 
 declare const XLSX: any;
 
@@ -17,6 +18,7 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
   const [quantity, setQuantity] = useState<number>(1);
   const [error, setError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
   
   const [showConfirmFinalize, setShowConfirmFinalize] = useState(false);
   
@@ -28,9 +30,10 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
     searchInputRef.current?.focus();
   }, []);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchCode) return;
+  const handleSearch = async (e?: React.FormEvent, codeToSearch?: string) => {
+    if (e) e.preventDefault();
+    const code = codeToSearch || searchCode;
+    if (!code) return;
     
     setError(null);
     setIsSearching(true);
@@ -38,14 +41,14 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
 
     try {
       // Prioridade 1: Busca na planilha de inventário local (se carregada)
-      const foundLocally = inventory.find(p => p.codigo === searchCode || p.ean === searchCode);
+      const foundLocally = inventory.find(p => p.codigo === code || p.ean === code);
       
       if (foundLocally) {
         setSelectedProduct(foundLocally);
         setTimeout(() => qtyInputRef.current?.focus(), 50);
       } else {
         // Prioridade 2: Busca no Banco de Dados Central (Neon)
-        const response = await fetch(`/api/products/${searchCode}`);
+        const response = await fetch(`/api/products/${code}`);
         
         if (response.ok) {
           const dbProduct = await response.json();
@@ -130,14 +133,26 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
         </h2>
 
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <input
-            type="text"
-            ref={searchInputRef}
-            value={searchCode}
-            onChange={(e) => setSearchCode(e.target.value.replace(/\D/g, ''))}
-            className="flex-grow px-4 py-3 sm:px-5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200 bg-slate-50/30 focus:bg-white text-black font-medium outline-none transition-all focus:ring-4 focus:ring-indigo-500/10 text-sm sm:text-base"
-            placeholder="Buscar EAN ou Código..."
-          />
+          <div className="flex-grow relative">
+            <input
+              type="text"
+              ref={searchInputRef}
+              value={searchCode}
+              onChange={(e) => setSearchCode(e.target.value.replace(/\D/g, ''))}
+              className="w-full px-4 py-3 sm:px-5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200 bg-slate-50/30 focus:bg-white text-black font-medium outline-none transition-all focus:ring-4 focus:ring-indigo-500/10 text-sm sm:text-base pr-12"
+              placeholder="Buscar EAN ou Código..."
+            />
+            <button
+              type="button"
+              onClick={() => setShowScanner(true)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all active:scale-90"
+              title="Escanear Código de Barras"
+            >
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+              </svg>
+            </button>
+          </div>
           <button
             type="submit"
             disabled={isSearching}
@@ -156,6 +171,18 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
           <div className="p-3 sm:p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 text-xs sm:text-sm font-bold mb-4 sm:mb-6 animate-shake">
             {error}
           </div>
+        )}
+
+        {showScanner && (
+          <BarcodeScanner 
+            onScan={(code) => {
+              setSearchCode(code);
+              setShowScanner(false);
+              // Trigger search immediately after scan
+              handleSearch(undefined, code);
+            }}
+            onClose={() => setShowScanner(false)}
+          />
         )}
 
         {selectedProduct && (

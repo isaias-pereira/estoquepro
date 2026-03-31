@@ -116,109 +116,109 @@ const Header: React.FC<HeaderProps> = ({ user, currentView, onNavigate, onLogout
         </div>
 
         {/* Mobile Navigation Dropdown */}
-        <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-[600px] opacity-100 py-6' : 'max-h-0 opacity-0'}`}>
-          <div className="border-t border-white/10 space-y-6">
-            <div className="grid grid-cols-2 gap-3 pt-6">
+        <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-[600px] opacity-100 py-4' : 'max-h-0 opacity-0'}`}>
+          <div className="border-t border-white/10 space-y-4">
+            <div className="grid grid-cols-2 gap-2 pt-4">
               <button
                 onClick={() => handleNavigate('consulta')}
-                className={`flex flex-col items-center justify-center p-4 rounded-2xl transition-all active:scale-95 ${
+                className={`flex flex-col items-center justify-center p-3 rounded-2xl transition-all active:scale-95 ${
                   currentView === 'consulta' 
                     ? 'bg-white text-indigo-700 shadow-xl' 
                     : 'bg-white/10 text-white border border-white/10 backdrop-blur-sm'
                 }`}
               >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 ${currentView === 'consulta' ? 'bg-indigo-50' : 'bg-white/10'}`}>
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1.5 ${currentView === 'consulta' ? 'bg-indigo-50' : 'bg-white/10'}`}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-wider">Consulta</span>
+                <span className="text-[9px] font-black uppercase tracking-wider">Consulta</span>
               </button>
 
               <button
                 onClick={() => handleNavigate('inventario')}
-                className={`flex flex-col items-center justify-center p-4 rounded-2xl transition-all active:scale-95 ${
+                className={`flex flex-col items-center justify-center p-3 rounded-2xl transition-all active:scale-95 ${
                   currentView === 'inventario' 
                     ? 'bg-white text-indigo-700 shadow-xl' 
                     : 'bg-white/10 text-white border border-white/10 backdrop-blur-sm'
                 }`}
               >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 ${currentView === 'inventario' ? 'bg-indigo-50' : 'bg-white/10'}`}>
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1.5 ${currentView === 'inventario' ? 'bg-indigo-50' : 'bg-white/10'}`}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-wider">Inventário</span>
+                <span className="text-[9px] font-black uppercase tracking-wider">Inventário</span>
               </button>
 
               <button
                 onClick={() => handleNavigate('notes')}
-                className={`flex flex-col items-center justify-center p-4 rounded-2xl transition-all active:scale-95 ${
+                className={`flex flex-col items-center justify-center p-3 rounded-2xl transition-all active:scale-95 ${
                   currentView === 'notes' 
                     ? 'bg-white text-indigo-700 shadow-xl' 
                     : 'bg-white/10 text-white border border-white/10 backdrop-blur-sm'
                 }`}
               >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 ${currentView === 'notes' ? 'bg-indigo-50' : 'bg-white/10'}`}>
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1.5 ${currentView === 'notes' ? 'bg-indigo-50' : 'bg-white/10'}`}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-wider">Notas</span>
+                <span className="text-[9px] font-black uppercase tracking-wider">Notas</span>
               </button>
 
               {user.role === 'admin' && (
                 <button
                   onClick={() => handleNavigate('database')}
-                  className={`flex flex-col items-center justify-center p-4 rounded-2xl transition-all active:scale-95 ${
+                  className={`flex flex-col items-center justify-center p-3 rounded-2xl transition-all active:scale-95 ${
                     currentView === 'database' 
                       ? 'bg-white text-indigo-700 shadow-xl' 
                       : 'bg-white/10 text-white border border-white/10 backdrop-blur-sm'
                   }`}
                 >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 ${currentView === 'database' ? 'bg-indigo-50' : 'bg-white/10'}`}>
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1.5 ${currentView === 'database' ? 'bg-indigo-50' : 'bg-white/10'}`}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
                     </svg>
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-wider">Dados</span>
+                  <span className="text-[9px] font-black uppercase tracking-wider">Dados</span>
                 </button>
               )}
 
               {user.role === 'admin' && (
                 <button
                   onClick={() => handleNavigate('usuarios')}
-                  className={`flex flex-col items-center justify-center p-4 rounded-2xl transition-all active:scale-95 ${
+                  className={`flex flex-col items-center justify-center p-3 rounded-2xl transition-all active:scale-95 ${
                     currentView === 'usuarios' 
                       ? 'bg-white text-indigo-700 shadow-xl' 
                       : 'bg-white/10 text-white border border-white/10 backdrop-blur-sm'
                   }`}
                 >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 ${currentView === 'usuarios' ? 'bg-indigo-50' : 'bg-white/10'}`}>
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1.5 ${currentView === 'usuarios' ? 'bg-indigo-50' : 'bg-white/10'}`}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                     </svg>
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-wider">Usuários</span>
+                  <span className="text-[9px] font-black uppercase tracking-wider">Usuários</span>
                 </button>
               )}
             </div>
 
-            <div className="pt-6 border-t border-white/10 flex items-center justify-between px-2">
+            <div className="pt-4 border-t border-white/10 flex items-center justify-between px-2">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-base font-black ring-2 ring-white/20 shadow-inner backdrop-blur-sm">
+                <div className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-sm font-black ring-2 ring-white/20 shadow-inner backdrop-blur-sm">
                   {user.username.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <p className="text-sm font-black leading-none">{user.username}</p>
-                  <p className="text-[8px] uppercase font-black text-indigo-200 tracking-widest mt-1">{user.role}</p>
+                  <p className="text-xs font-black leading-none">{user.username}</p>
+                  <p className="text-[7px] uppercase font-black text-indigo-200 tracking-widest mt-1">{user.role}</p>
                 </div>
               </div>
               <button
                 onClick={onLogout}
-                className="bg-red-500/20 hover:bg-red-500 text-red-100 p-2.5 rounded-xl transition-all border border-red-500/30 active:scale-95"
+                className="bg-red-500/20 hover:bg-red-500 text-red-100 p-2 rounded-xl transition-all border border-red-500/30 active:scale-95"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
               </button>

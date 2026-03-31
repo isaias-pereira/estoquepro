@@ -157,8 +157,8 @@ const App: React.FC = () => {
       />
       
       <div className="flex-grow flex flex-col relative z-10">
-        <main className="flex-grow py-6 sm:py-12">
-          <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
+        <main className="flex-grow py-4 sm:py-12">
+          <div className="container mx-auto px-3 sm:px-6 max-w-4xl">
             {currentView === 'consulta' && (
               <Consultation inventory={consultationBase} lastUpdate={lastUpdateConsultation} />
             )}

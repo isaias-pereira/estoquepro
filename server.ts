@@ -1,14 +1,43 @@
 import express from "express";
 import path from "path";
-import { createClient } from "@supabase/supabase-js";
 import { neon } from "@neondatabase/serverless";
 
-const SUPABASE_URL = process.env.SUPABASE_URL || "https://lleyeblqbpkjgabytmyq.supabase.co";
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "sb_publishable_1MlPWWhnBpjRRJ-IycyT6Q_SKZyEvDV";
-const NEON_DB_URL = 'postgresql://neondb_owner:npg_3eSWoBOkXqb1@ep-sparkling-hall-acmrc7fp-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require';
+const NEON_DB_URL = process.env.NEON_DB_URL || "";
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const sql = neon(NEON_DB_URL);
+let sql: any = null;
+if (NEON_DB_URL) {
+  try {
+    let sanitizedUrl = NEON_DB_URL.trim();
+    
+    // Remove "psql " prefix if present (common copy-paste from Neon dashboard)
+    if (sanitizedUrl.startsWith('psql ')) {
+      sanitizedUrl = sanitizedUrl.substring(5).trim();
+    }
+    
+    // Remove surrounding single or double quotes if present
+    if ((sanitizedUrl.startsWith("'") && sanitizedUrl.endsWith("'")) || 
+        (sanitizedUrl.startsWith('"') && sanitizedUrl.endsWith('"'))) {
+      sanitizedUrl = sanitizedUrl.substring(1, sanitizedUrl.length - 1).trim();
+    }
+
+    // Basic validation
+    if (!sanitizedUrl.startsWith('postgresql://') && !sanitizedUrl.startsWith('postgres://')) {
+      console.error(`Invalid NEON_DB_URL format. Must start with postgresql:// or postgres://. Found: "${sanitizedUrl.substring(0, 20)}..."`);
+    } else {
+      sql = neon(sanitizedUrl);
+      const host = new URL(sanitizedUrl).hostname;
+      console.log(`Neon client initialized for host: ${host}`);
+      
+      // Log masked URL for debugging
+      const maskedUrl = sanitizedUrl.substring(0, 20) + "..." + sanitizedUrl.substring(sanitizedUrl.length - 5);
+      console.log(`Using Neon DB URL: ${maskedUrl}`);
+    }
+  } catch (error) {
+    console.error("Failed to initialize Neon client:", error);
+  }
+} else {
+  console.warn("Neon DB URL missing. Database features will be disabled.");
+}
 
 async function createServer() {
   const app = express();
@@ -21,7 +50,7 @@ async function createServer() {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
-  // API Route to search for a product by code or EAN using Supabase
+  // API Route to search for a product by code or EAN using Neon
   app.get("/api/products/:code", async (req, res) => {
     const { code } = req.params;
     
@@ -29,10 +58,13 @@ async function createServer() {
       return res.status(400).json({ error: "Código inválido." });
     }
 
+    if (!sql) {
+      return res.status(503).json({ error: "Serviço de banco de dados Neon indisponível." });
+    }
+
     try {
       const cleanCode = code.trim();
       
-      // Priority 1: Search in Neon Database (as requested)
       try {
         const neonResults = await sql`
           SELECT ean, codigo, descricao FROM produto WHERE ean = ${cleanCode} OR codigo = ${cleanCode} LIMIT 1
@@ -48,62 +80,10 @@ async function createServer() {
         }
       } catch (neonErr) {
         console.error("Neon Query Error:", neonErr);
-        // Continue to Supabase if Neon fails
+        return res.status(500).json({ error: "Erro na consulta ao banco de dados Neon." });
       }
-
-      // Priority 2: Search in Supabase (Fallback)
-      let response = await supabase
-        .from('produto')
-        .select('ean, codigo, descricao, preco, estoque')
-        .or(`codigo.eq.${cleanCode},ean.eq.${cleanCode}`)
-        .limit(1)
-        .maybeSingle();
-
-      let data = response.data;
-      let error = response.error;
-
-      // If it fails, it might be because 'preco' or 'estoque' columns are missing in Supabase
-      if (error && error.message.includes('column') && (error.message.includes('preco') || error.message.includes('estoque'))) {
-        console.warn("Columns 'preco' or 'estoque' missing in Supabase, falling back to basic columns.");
-        const fallback = await supabase
-          .from('produto')
-          .select('ean, codigo, descricao')
-          .or(`codigo.eq.${cleanCode},ean.eq.${cleanCode}`)
-          .limit(1)
-          .maybeSingle();
-        
-        if (fallback.data) {
-          data = { 
-            ...fallback.data, 
-            preco: 0, 
-            estoque: 0 
-          } as any;
-        } else {
-          data = null;
-        }
-        error = fallback.error;
-      }
-
-      if (error) {
-        console.error("Supabase Query Error:", error);
-        if (error.code === 'PGRST116' || error.message.includes('relation "produto" does not exist')) {
-          return res.status(404).json({ 
-            error: "Base de dados não encontrada ou tabela 'produto' não existe no Supabase.",
-            message: "Por favor, crie a tabela 'produto' no seu painel do Supabase."
-          });
-        }
-        return res.status(500).json({ 
-          error: "Erro na consulta ao banco de dados.",
-          message: error.message,
-          code: error.code
-        });
-      }
-
-      if (data) {
-        res.json(data);
-      } else {
-        res.status(404).json({ message: "Produto não encontrado no banco de dados central." });
-      }
+      
+      res.status(404).json({ message: "Produto não encontrado no banco de dados central." });
     } catch (error: any) {
       console.error("Unexpected error during product search:", error);
       res.status(500).json({ 
@@ -113,142 +93,40 @@ async function createServer() {
     }
   });
 
-  // API Route to create a new user in Supabase
+  // API Route to create a new user (Disabled - previously Supabase)
   app.post("/api/users", async (req, res) => {
-    const { username, password, role } = req.body;
-
-    if (!username || !password || !role) {
-      return res.status(400).json({ error: "Todos os campos são obrigatórios." });
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('users_management')
-        .insert([{ username, password, role }])
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Supabase Insert Error:", error);
-        return res.status(500).json({ 
-          error: "Erro ao criar usuário no banco de dados.",
-          message: error.message,
-          code: error.code
-        });
-      }
-
-      res.status(201).json(data);
-    } catch (error: any) {
-      console.error("Unexpected error during user creation:", error);
-      res.status(500).json({ 
-        error: "Erro interno ao criar usuário.",
-        details: error.message || "Erro desconhecido"
-      });
-    }
+    res.status(501).json({ error: "Funcionalidade de criação de usuários desativada (Supabase removido)." });
   });
 
-  // API Route to list users (for admin view)
+  // API Route to list users (Disabled - previously Supabase)
   app.get("/api/users", async (req, res) => {
-    try {
-      const { data, error } = await supabase
-        .from('users_management')
-        .select('id, username, role, created_at')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error("Supabase Fetch Error:", error);
-        return res.status(500).json({ 
-          error: "Erro ao buscar usuários.",
-          message: error.message
-        });
-      }
-
-      res.json(data);
-    } catch (error: any) {
-      console.error("Unexpected error during user fetch:", error);
-      res.status(500).json({ 
-        error: "Erro interno ao buscar usuários."
-      });
-    }
+    res.json([]);
   });
 
-  // API Route to check Supabase connection and table status
+  // API Route to check database status
   app.get("/api/admin/db-status", async (req, res) => {
-    try {
-      const { error: prodError } = await supabase.from('produto').select('count', { count: 'exact', head: true });
-      const { error: userError } = await supabase.from('users_management').select('count', { count: 'exact', head: true });
-      
-      const status = {
-        connected: true,
-        tables: {
-          produto: !prodError || !prodError.message.includes('relation "produto" does not exist'),
-          users_management: !userError || !userError.message.includes('relation "users_management" does not exist')
-        },
-        errors: {
-          produto: prodError ? prodError.message : null,
-          users_management: userError ? userError.message : null
-        }
-      };
-      
-      res.json(status);
-    } catch (err: any) {
-      res.status(500).json({ connected: false, error: err.message });
-    }
+    const status = {
+      connected: !!sql,
+      tables: {
+        produto: !!sql,
+        users_management: false
+      },
+      errors: {
+        produto: sql ? null : "Neon não configurado",
+        users_management: "Supabase removido"
+      }
+    };
+    res.json(status);
   });
 
-  // API Route to bulk upload products to Supabase
+  // API Route to bulk upload products (Disabled - previously Supabase)
   app.post("/api/admin/sync-products", async (req, res) => {
-    const { products } = req.body;
-    
-    if (!Array.isArray(products) || products.length === 0) {
-      return res.status(400).json({ error: "Nenhum produto enviado para sincronização." });
-    }
-
-    try {
-      // Supabase insert/upsert
-      const { data, error } = await supabase
-        .from('produto')
-        .upsert(products, { onConflict: 'ean' });
-
-      if (error) {
-        console.error("Supabase Sync Error:", error);
-        return res.status(500).json({ 
-          error: "Erro ao sincronizar com Supabase.",
-          message: error.message
-        });
-      }
-
-      res.json({ success: true, count: products.length });
-    } catch (err: any) {
-      res.status(500).json({ error: "Erro interno na sincronização.", details: err.message });
-    }
+    res.status(501).json({ error: "Sincronização com banco de dados central desativada (Supabase removido)." });
   });
 
-  // API Route to fetch notes from Supabase
+  // API Route to fetch notes (Disabled - previously Supabase)
   app.get("/api/notes", async (req, res) => {
-    try {
-      const { data, error } = await supabase
-        .from('notes')
-        .select('*');
-
-      if (error) {
-        // Log the error more clearly for debugging
-        console.error("Supabase Notes Error:", JSON.stringify(error, null, 2));
-        
-        // We want to be extremely resilient here. 
-        // If there's ANY error fetching notes (table missing, RLS, invalid key, etc.),
-        // we return an empty array so the UI doesn't break.
-        // The UI will simply show "Nenhuma nota encontrada".
-        console.warn("Returning empty array for notes due to Supabase error.");
-        return res.json([]);
-      }
-
-      res.json(data || []);
-    } catch (error: any) {
-      console.error("Unexpected error during notes fetch:", error);
-      // Even on unexpected exceptions, return empty array to keep UI stable
-      res.json([]);
-    }
+    res.json([]);
   });
 
   // API Route for Login Authentication
@@ -261,7 +139,7 @@ async function createServer() {
     }
 
     try {
-      // Check hardcoded defaults first for safety
+      // Check hardcoded defaults
       if (username === 'admin' && password === '123') {
         return res.json({ username: 'Administrador', role: 'admin' });
       }
@@ -269,26 +147,7 @@ async function createServer() {
         return res.json({ username: 'Usuário Comum', role: 'user' });
       }
 
-      // Check Supabase
-      const { data, error } = await supabase
-        .from('users_management')
-        .select('username, role, password')
-        .eq('username', username)
-        .eq('password', password)
-        .maybeSingle();
-
-      if (error) {
-        console.error("Supabase Auth Error:", error);
-        return res.status(500).json({ error: "Erro na autenticação." });
-      }
-
-      if (data) {
-        // Remove password from response
-        const { password: _, ...user } = data;
-        res.json(user);
-      } else {
-        res.status(401).json({ error: "Usuário ou senha inválidos." });
-      }
+      res.status(401).json({ error: "Usuário ou senha inválidos." });
     } catch (error: any) {
       console.error("Unexpected error during login:", error);
       res.status(500).json({ error: "Erro interno no servidor." });
@@ -311,7 +170,7 @@ async function createServer() {
     app.use(express.static(distPath));
     
     // SPA fallback: serve index.html for any unknown routes
-    app.get("*", (req, res) => {
+    app.get("*all", (req, res) => {
       const indexPath = path.join(distPath, "index.html");
       res.sendFile(indexPath, (err) => {
         if (err) {

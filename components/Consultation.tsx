@@ -74,12 +74,12 @@ const Consultation: React.FC<ConsultationProps> = ({ inventory, lastUpdate }) =>
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 animate-fadeIn">
-      <div className="bg-blue-100 p-4 sm:p-6 rounded-3xl shadow-xl border border-blue-200 relative">
-        <div className="flex justify-between items-start mb-4">
-          <h2 className="text-lg font-black text-slate-800 flex items-center">
-            <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center mr-3 shadow-inner">
-              <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="space-y-3 sm:space-y-6 animate-fadeIn">
+      <div className="bg-blue-100 p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl shadow-xl border border-blue-200 relative">
+        <div className="flex justify-between items-start mb-3 sm:mb-4">
+          <h2 className="text-base sm:text-lg font-black text-slate-800 flex items-center">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-indigo-50 rounded-lg sm:rounded-xl flex items-center justify-center mr-2 sm:mr-3 shadow-inner">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
@@ -92,14 +92,14 @@ const Consultation: React.FC<ConsultationProps> = ({ inventory, lastUpdate }) =>
           )}
         </div>
         
-        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
+        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
           <div className={`flex-grow relative ${error ? 'animate-shake' : ''}`}>
             <input
               type="text"
               inputMode="numeric"
               value={searchCode}
               onChange={handleInputChange}
-              className={`w-full px-5 py-3.5 rounded-xl border bg-slate-50/50 focus:bg-white focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all shadow-inner placeholder:text-slate-400 text-black font-bold pr-12 text-sm ${
+              className={`w-full px-4 py-3 sm:px-5 sm:py-3.5 rounded-lg sm:rounded-xl border bg-slate-50/50 focus:bg-white focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all shadow-inner placeholder:text-slate-400 text-black font-bold pr-10 sm:pr-12 text-xs sm:text-sm ${
                 error ? 'border-red-400 focus:border-red-500' : 'border-slate-100 focus:border-indigo-400'
               }`}
               placeholder="Código ou EAN..."
@@ -107,10 +107,10 @@ const Consultation: React.FC<ConsultationProps> = ({ inventory, lastUpdate }) =>
             <button
               type="button"
               onClick={() => setShowScanner(true)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all active:scale-90"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all active:scale-90"
               title="Escanear Código de Barras"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
               </svg>
             </button>
@@ -118,11 +118,11 @@ const Consultation: React.FC<ConsultationProps> = ({ inventory, lastUpdate }) =>
           <button
             type="submit"
             disabled={isSearching}
-            className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-black py-3 px-8 rounded-xl transition-all shadow-lg shadow-indigo-200 whitespace-nowrap active:scale-95 min-h-[52px] text-sm"
+            className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-black py-2.5 sm:py-3 px-6 sm:px-8 rounded-lg sm:rounded-xl transition-all shadow-lg shadow-indigo-200 whitespace-nowrap active:scale-95 min-h-[44px] sm:min-h-[52px] text-xs sm:text-sm"
           >
             {isSearching ? (
               <div className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin -ml-1 mr-2 h-3 w-3 sm:h-4 sm:w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>

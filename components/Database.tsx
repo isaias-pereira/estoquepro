@@ -133,33 +133,33 @@ const Database: React.FC<DatabaseProps> = ({ onUploadConsultation, onClearDataba
 
       {/* Planilha de Consulta Section */}
       <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
-        <div className="p-4 sm:p-6">
-          <h3 className="text-base font-black text-slate-800 mb-6 flex items-center">
-            <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center mr-3 shadow-inner">
-              <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="p-3.5 sm:p-6">
+          <h3 className="text-sm sm:text-base font-black text-slate-800 mb-6 flex items-center">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-indigo-50 rounded-xl flex items-center justify-center mr-3 shadow-inner">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
             1. Planilha de Consulta
           </h3>
           
-          <div className="grid lg:grid-cols-2 gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <div className="space-y-4">
-              <div className="group border-4 border-dashed border-slate-100 rounded-2xl p-6 bg-slate-50/50 hover:bg-white hover:border-indigo-200 transition-all cursor-pointer text-center shadow-inner"
+              <div className="group border-2 sm:border-4 border-dashed border-slate-100 rounded-xl sm:rounded-2xl p-4 sm:p-6 bg-slate-50/50 hover:bg-white hover:border-indigo-200 transition-all cursor-pointer text-center shadow-inner"
                    onClick={() => fileConsultRef.current?.click()}>
                 <input type="file" ref={fileConsultRef} onChange={(e) => handleFileChange(e, 'consult')} accept=".csv, .xlsx, .xls, .ods" className="hidden" />
-                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mx-auto mb-3 shadow-sm group-hover:scale-110 transition-transform">
-                  <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-xl flex items-center justify-center mx-auto mb-3 shadow-sm group-hover:scale-110 transition-transform">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
                 </div>
-                <p className="text-xs font-black text-slate-700 truncate px-2">{fileConsult ? fileConsult.name : 'Selecionar Arquivo'}</p>
+                <p className="text-[10px] sm:text-xs font-black text-slate-700 truncate px-2">{fileConsult ? fileConsult.name : 'Selecionar Arquivo'}</p>
                 <p className="text-[8px] text-slate-400 mt-1.5 uppercase tracking-[0.2em] font-black">EAN, DESCRIÇÃO, ESTOQUE, PREÇO</p>
               </div>
               <button
                 onClick={() => fileConsult && processFile(fileConsult, 'consult')}
                 disabled={!fileConsult || loading === 'consult'}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 px-6 rounded-xl shadow-xl shadow-indigo-100 active:scale-95 disabled:bg-slate-200 disabled:shadow-none transition-all min-h-[56px] text-sm"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3.5 sm:py-4 px-6 rounded-xl shadow-xl shadow-indigo-100 active:scale-95 disabled:bg-slate-200 disabled:shadow-none transition-all min-h-[52px] sm:min-h-[56px] text-sm"
               >
                 {loading === 'consult' ? 'Importando...' : 'Importar Consulta'}
               </button>
@@ -184,17 +184,17 @@ const Database: React.FC<DatabaseProps> = ({ onUploadConsultation, onClearDataba
       </div>
 
       {/* Clear Database Section */}
-      <div className="bg-red-50/40 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-red-100 shadow-2xl">
+      <div className="bg-red-50/40 backdrop-blur-md rounded-3xl p-4 sm:p-8 border border-red-100 shadow-2xl">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
           <div className="flex items-center text-center lg:text-left flex-col lg:flex-row">
-            <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center mb-3 lg:mb-0 lg:mr-4 shadow-inner">
-              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-2xl flex items-center justify-center mb-3 lg:mb-0 lg:mr-4 shadow-inner">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </div>
             <div>
-              <h3 className="text-lg font-black text-red-900 tracking-tight">Zona de Perigo</h3>
-              <p className="text-xs text-red-700/70 font-bold mt-0.5 leading-relaxed max-w-md">Esta ação irá apagar permanentemente todos os dados de consulta e inventário salvos localmente.</p>
+              <h3 className="text-base sm:text-lg font-black text-red-900 tracking-tight">Zona de Perigo</h3>
+              <p className="text-[10px] sm:text-xs text-red-700/70 font-bold mt-0.5 leading-relaxed max-w-md">Esta ação irá apagar permanentemente todos os dados de consulta e inventário salvos localmente.</p>
             </div>
           </div>
           <button
@@ -204,7 +204,7 @@ const Database: React.FC<DatabaseProps> = ({ onUploadConsultation, onClearDataba
                 setStatus({ type: 'success', message: 'Toda a base de dados foi apagada com sucesso.', target: 'consult' });
               }
             }}
-            className="whitespace-nowrap bg-red-600 hover:bg-red-700 text-white font-black py-4 px-8 rounded-xl shadow-xl shadow-red-100 transition-all active:scale-95 uppercase tracking-[0.2em] text-[10px]"
+            className="whitespace-nowrap bg-red-600 hover:bg-red-700 text-white font-black py-3 px-6 sm:py-4 sm:px-8 rounded-xl shadow-xl shadow-red-100 transition-all active:scale-95 uppercase tracking-[0.2em] text-[10px]"
           >
             Limpar Base de Dados
           </button>

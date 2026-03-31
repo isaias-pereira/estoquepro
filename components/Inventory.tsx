@@ -16,6 +16,9 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
   const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
   const [quantity, setQuantity] = useState<number>(1);
   const [error, setError] = useState<string | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  
+  const [showConfirmFinalize, setShowConfirmFinalize] = useState(false);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   const qtyInputRef = useRef<HTMLInputElement>(null);
@@ -25,26 +28,44 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
     searchInputRef.current?.focus();
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!searchCode) return;
+    
     setError(null);
-    
-    if (inventory.length === 0) {
-      setError('Nenhuma planilha de inventário carregada. Acesse "Base de Dados" para importar.');
-      return;
-    }
+    setIsSearching(true);
+    setSelectedProduct(null);
 
-    // Busca exclusivamente na planilha de inventário conforme solicitado
-    const found = inventory.find(p => p.codigo === searchCode || p.ean === searchCode);
-    
-    if (found) {
-      setSelectedProduct(found);
-      // Slight delay to ensure the input is rendered before focusing
-      setTimeout(() => qtyInputRef.current?.focus(), 50);
-    } else {
-      setSelectedProduct(null);
-      setError('Código não encontrado na base de inventário.');
-      searchInputRef.current?.select();
+    try {
+      // Prioridade 1: Busca na planilha de inventário local (se carregada)
+      const foundLocally = inventory.find(p => p.codigo === searchCode || p.ean === searchCode);
+      
+      if (foundLocally) {
+        setSelectedProduct(foundLocally);
+        setTimeout(() => qtyInputRef.current?.focus(), 50);
+      } else {
+        // Prioridade 2: Busca no Banco de Dados Central (Neon)
+        const response = await fetch(`/api/products/${searchCode}`);
+        
+        if (response.ok) {
+          const dbProduct = await response.json();
+          // Converte para InventoryItem (adiciona quantidade 0 inicial se necessário)
+          setSelectedProduct({
+            ...dbProduct,
+            quantidade: 0
+          });
+          setTimeout(() => qtyInputRef.current?.focus(), 50);
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          setError(errorData.error || errorData.message || 'Produto não encontrado na base local nem no banco central.');
+          searchInputRef.current?.select();
+        }
+      }
+    } catch (err) {
+      console.error("Search error:", err);
+      setError('Erro ao conectar com o banco de dados central.');
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -84,14 +105,13 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
   };
 
   const handleFinalize = () => {
-    if (window.confirm('Tem certeza que deseja finalizar e LIMPAR toda a contagem atual? Esta ação não pode ser desfeita.')) {
-      onClear();
-      setSelectedProduct(null);
-      setSearchCode('');
-      setQuantity(1);
-      setError(null);
-      searchInputRef.current?.focus();
-    }
+    onClear();
+    setSelectedProduct(null);
+    setSearchCode('');
+    setQuantity(1);
+    setError(null);
+    setShowConfirmFinalize(false);
+    setTimeout(() => searchInputRef.current?.focus(), 50);
   };
 
   const countedList = inventory.filter(item => item.quantidade > 0);
@@ -120,9 +140,15 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
           />
           <button
             type="submit"
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 sm:py-4 px-6 sm:px-10 rounded-xl sm:rounded-2xl transition-all shadow-md active:scale-95 whitespace-nowrap text-sm sm:text-base"
+            disabled={isSearching}
+            className={`${isSearching ? 'bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700'} text-white font-bold py-3 sm:py-4 px-6 sm:px-10 rounded-xl sm:rounded-2xl transition-all shadow-md active:scale-95 whitespace-nowrap text-sm sm:text-base flex items-center justify-center min-w-[120px]`}
           >
-            Consultar
+            {isSearching ? (
+              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : 'Consultar'}
           </button>
         </form>
 
@@ -206,15 +232,35 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
 
         {countedList.length > 0 && (
           <div className="p-4 sm:p-8 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
-            <button
-              onClick={handleFinalize}
-              className="bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2.5 sm:py-3 px-4 sm:px-8 rounded-lg sm:rounded-xl transition-all border border-red-200 active:scale-95 flex items-center justify-center text-xs sm:text-sm"
-            >
-              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              Finalizar e Limpar
-            </button>
+            {!showConfirmFinalize ? (
+              <button
+                onClick={() => setShowConfirmFinalize(true)}
+                className="bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2.5 sm:py-3 px-4 sm:px-8 rounded-lg sm:rounded-xl transition-all border border-red-200 active:scale-95 flex items-center justify-center text-xs sm:text-sm"
+              >
+                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Finalizar e Limpar
+              </button>
+            ) : (
+              <div className="flex flex-col sm:flex-row gap-2 items-center animate-fadeIn">
+                <span className="text-[10px] font-black text-red-600 uppercase tracking-widest mr-2">Confirmar Limpeza?</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleFinalize}
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg text-xs"
+                  >
+                    Sim, Limpar
+                  </button>
+                  <button
+                    onClick={() => setShowConfirmFinalize(false)}
+                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 px-4 rounded-lg text-xs"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
             <button
               onClick={exportInventory}
               className="bg-slate-800 hover:bg-black text-white font-bold py-2.5 sm:py-3 px-4 sm:px-8 rounded-lg sm:rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center text-xs sm:text-sm"

@@ -7,13 +7,16 @@ declare const XLSX: any;
 interface DatabaseProps {
   onUploadConsultation: (data: Product[]) => void;
   onClearDatabase: () => void;
+  onClearCache: () => void;
   onBack: () => void;
 }
 
-const Database: React.FC<DatabaseProps> = ({ onUploadConsultation, onClearDatabase, onBack }) => {
+const Database: React.FC<DatabaseProps> = ({ onUploadConsultation, onClearDatabase, onClearCache, onBack }) => {
   const [fileConsult, setFileConsult] = useState<File | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string, target: 'consult' | 'invent' } | null>(null);
+  const [showConfirmClear, setShowConfirmClear] = useState(false);
+  const [showConfirmCache, setShowConfirmCache] = useState(false);
   
   const fileConsultRef = useRef<HTMLInputElement>(null);
 
@@ -194,20 +197,71 @@ const Database: React.FC<DatabaseProps> = ({ onUploadConsultation, onClearDataba
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-black text-red-900 tracking-tight">Zona de Perigo</h3>
-              <p className="text-[10px] sm:text-xs text-red-700/70 font-bold mt-0.5 leading-relaxed max-w-md">Esta ação irá apagar permanentemente todos os dados de consulta e inventário salvos localmente.</p>
+              <p className="text-[10px] sm:text-xs text-red-700/70 font-bold mt-0.5 leading-relaxed max-w-md">Estas ações irão apagar permanentemente os dados salvos localmente no seu navegador.</p>
             </div>
           </div>
-          <button
-            onClick={() => {
-              if (window.confirm('Tem certeza que deseja apagar toda a base de dados? Esta ação não pode ser desfeita.')) {
-                onClearDatabase();
-                setStatus({ type: 'success', message: 'Toda a base de dados foi apagada com sucesso.', target: 'consult' });
-              }
-            }}
-            className="whitespace-nowrap bg-red-600 hover:bg-red-700 text-white font-black py-3 px-6 sm:py-4 sm:px-8 rounded-xl shadow-xl shadow-red-100 transition-all active:scale-95 uppercase tracking-[0.2em] text-[10px]"
-          >
-            Limpar Base de Dados
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+            {!showConfirmCache ? (
+              <button
+                onClick={() => setShowConfirmCache(true)}
+                className="whitespace-nowrap bg-white border-2 border-red-200 hover:bg-red-50 text-red-600 font-black py-3 px-6 sm:py-4 sm:px-8 rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-[0.2em] text-[10px]"
+              >
+                Limpar Cache do Sistema
+              </button>
+            ) : (
+              <div className="flex flex-col sm:flex-row gap-2 items-center bg-white p-2 rounded-xl border border-red-100 shadow-sm animate-fadeIn">
+                <span className="text-[8px] font-black text-red-600 uppercase tracking-widest px-2">Limpar Cache?</span>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => {
+                      onClearCache();
+                      setShowConfirmCache(false);
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white font-black py-2 px-3 rounded-lg text-[9px] uppercase"
+                  >
+                    Sim
+                  </button>
+                  <button
+                    onClick={() => setShowConfirmCache(false)}
+                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-black py-2 px-3 rounded-lg text-[9px] uppercase"
+                  >
+                    Não
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!showConfirmClear ? (
+              <button
+                onClick={() => setShowConfirmClear(true)}
+                className="whitespace-nowrap bg-red-600 hover:bg-red-700 text-white font-black py-3 px-6 sm:py-4 sm:px-8 rounded-xl shadow-xl shadow-red-100 transition-all active:scale-95 uppercase tracking-[0.2em] text-[10px]"
+              >
+                Limpar Base de Dados
+              </button>
+            ) : (
+              <div className="flex flex-col sm:flex-row gap-2 items-center bg-white p-2 rounded-xl border border-red-100 shadow-sm animate-fadeIn">
+                <span className="text-[8px] font-black text-red-600 uppercase tracking-widest px-2">Apagar Tudo?</span>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => {
+                      onClearDatabase();
+                      setStatus({ type: 'success', message: 'Toda a base de dados foi apagada com sucesso.', target: 'consult' });
+                      setShowConfirmClear(false);
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white font-black py-2 px-3 rounded-lg text-[9px] uppercase"
+                  >
+                    Apagar
+                  </button>
+                  <button
+                    onClick={() => setShowConfirmClear(false)}
+                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-black py-2 px-3 rounded-lg text-[9px] uppercase"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

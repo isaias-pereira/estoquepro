@@ -16,4 +16,4 @@ export interface User {
   role: 'admin' | 'user';
 }
 
-export type View = 'consulta' | 'database' | 'inventario' | 'usuarios' | 'notes';
+export type View = 'consulta' | 'database' | 'inventario' | 'usuarios';

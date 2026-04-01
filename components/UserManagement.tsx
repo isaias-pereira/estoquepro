@@ -166,7 +166,7 @@ const UserManagement: React.FC = () => {
             <tbody className="divide-y divide-slate-50">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-5 py-10 text-center text-slate-400 font-medium italic text-xs">Nenhum usuário encontrado no Supabase.</td>
+                  <td colSpan={3} className="px-5 py-10 text-center text-slate-400 font-medium italic text-xs">Nenhum usuário encontrado no banco de dados.</td>
                 </tr>
               ) : (
                 users.map((u) => (

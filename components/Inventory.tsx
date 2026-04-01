@@ -15,7 +15,7 @@ interface InventoryProps {
 const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }) => {
   const [searchCode, setSearchCode] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
-  const [quantity, setQuantity] = useState<number>(1);
+  const [quantity, setQuantity] = useState<number | string>('');
   const [error, setError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
@@ -78,13 +78,13 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
     
     onAdd({
       ...selectedProduct,
-      quantidade: quantity
+      quantidade: Number(quantity) || 0
     });
 
     // Reset for the next scan cycle as requested
     setSelectedProduct(null);
     setSearchCode('');
-    setQuantity(1);
+    setQuantity('');
     setError(null);
     
     // Return focus to the search input for the next scan
@@ -94,10 +94,9 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
   };
 
   const exportInventory = () => {
-    const countedItems = inventory.filter(item => item.quantidade > 0);
-    if (countedItems.length === 0) return;
+    if (inventory.length === 0) return;
     
-    const data = countedItems.map(item => [item.ean, item.codigo, item.descricao, item.quantidade]);
+    const data = inventory.map(item => [item.ean, item.codigo, item.descricao, item.quantidade]);
     const ws = XLSX.utils.aoa_to_sheet([['EAN', 'Código', 'Descrição', 'Quantidade'], ...data]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Inventario");
@@ -111,13 +110,13 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
     onClear();
     setSelectedProduct(null);
     setSearchCode('');
-    setQuantity(1);
+    setQuantity('');
     setError(null);
     setShowConfirmFinalize(false);
     setTimeout(() => searchInputRef.current?.focus(), 50);
   };
 
-  const countedList = inventory.filter(item => item.quantidade > 0);
+  const countedList = inventory;
 
   return (
     <div className="space-y-4 sm:space-y-8 animate-fadeIn">
@@ -205,9 +204,10 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
                   <input
                     type="number"
                     ref={qtyInputRef}
-                    min="1"
+                    min="0"
+                    placeholder="0"
                     value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
+                    onChange={(e) => setQuantity(e.target.value)}
                     className="w-full px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl border border-indigo-200 text-black font-black outline-none focus:ring-4 focus:ring-indigo-500/10 text-sm sm:text-base"
                   />
                 </div>

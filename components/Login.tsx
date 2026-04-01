@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { User } from '../types';
 
 interface LoginProps {
-  onLogin: (user: User, rememberMe: boolean) => void;
+  onLogin: (user: User, rememberMe: boolean, token: string) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
@@ -29,8 +29,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       });
 
       if (response.ok) {
-        const userData = await response.json();
-        onLogin(userData, rememberMe);
+        const { user: userData, token } = await response.json();
+        onLogin(userData, rememberMe, token);
       } else {
         const data = await response.json();
         setError(data.error || 'Usuário ou senha inválidos.');

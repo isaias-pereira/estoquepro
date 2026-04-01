@@ -1,8 +1,11 @@
 import express from "express";
 import path from "path";
 import { neon } from "@neondatabase/serverless";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const NEON_DB_URL = process.env.NEON_DB_URL || "";
+const JWT_SECRET = process.env.JWT_SECRET || "estoque-pro-secret-key-2026";
 
 let sql: any = null;
 if (NEON_DB_URL) {
@@ -93,27 +96,84 @@ async function createServer() {
     }
   });
 
-  // API Route to create a new user (Disabled - previously Supabase)
+  // API Route to create a new user
   app.post("/api/users", async (req, res) => {
-    res.status(501).json({ error: "Funcionalidade de criação de usuários desativada (Supabase removido)." });
+    const { username, password, role } = req.body;
+
+    if (!username || !password || !role) {
+      return res.status(400).json({ error: "Todos os campos são obrigatórios." });
+    }
+
+    if (!sql) {
+      return res.status(503).json({ error: "Neon não configurado." });
+    }
+
+    try {
+      const lowerUsername = username.toLowerCase().trim();
+      const hash = await bcrypt.hash(password, 10);
+      const nome = username.split('.')[0] || username; // Simple name generation
+
+      console.log(`Creating user: "${lowerUsername}" (role: ${role})`);
+      console.log(`Hash generated: ${hash.substring(0, 10)}...`);
+
+      await sql`
+        INSERT INTO usuarios (username, password_hash, nome, role)
+        VALUES (${lowerUsername}, ${hash}, ${nome}, ${role})
+      `;
+
+      console.log("User created successfully in database.");
+      res.status(201).json({ message: "Usuário criado com sucesso." });
+    } catch (error: any) {
+      console.error("Error creating user:", error);
+      if (error.message?.includes("unique constraint")) {
+        return res.status(409).json({ error: "Este nome de usuário já existe." });
+      }
+      res.status(500).json({ error: "Erro ao criar usuário." });
+    }
   });
 
-  // API Route to list users (Disabled - previously Supabase)
+  // API Route to list users
   app.get("/api/users", async (req, res) => {
-    res.json([]);
+    if (!sql) {
+      return res.json([]);
+    }
+
+    try {
+      const results = await sql`
+        SELECT id, username, role, created_at FROM usuarios ORDER BY id DESC
+      `;
+      res.json(results);
+    } catch (error: any) {
+      console.error("Error listing users:", error);
+      res.status(500).json({ error: "Erro ao listar usuários." });
+    }
   });
 
   // API Route to check database status
   app.get("/api/admin/db-status", async (req, res) => {
+    let usersTableExists = false;
+    let productsTableExists = false;
+
+    if (sql) {
+      try {
+        const usersCheck = await sql`SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'usuarios')`;
+        usersTableExists = usersCheck[0].exists;
+        
+        const productsCheck = await sql`SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'produto')`;
+        productsTableExists = productsCheck[0].exists;
+      } catch (err) {
+        console.error("DB Status check error:", err);
+      }
+    }
+
     const status = {
       connected: !!sql,
       tables: {
-        produto: !!sql,
-        users_management: false
+        produto: productsTableExists,
+        usuarios: usersTableExists
       },
       errors: {
-        produto: sql ? null : "Neon não configurado",
-        users_management: "Supabase removido"
+        db: sql ? null : "Neon não configurado",
       }
     };
     res.json(status);
@@ -129,28 +189,146 @@ async function createServer() {
     res.json([]);
   });
 
-  // API Route for Login Authentication
-  app.post("/api/auth/login", async (req, res) => {
-    const { username, password } = req.body;
-    console.log(`Login attempt: ${username}`);
-
-    if (!username || !password) {
-      return res.status(400).json({ error: "Usuário e senha são obrigatórios." });
+  // API Route to setup the database tables
+  app.get("/api/admin/setup", async (req, res) => {
+    if (!sql) {
+      return res.status(503).json({ error: "Neon não configurado." });
     }
 
     try {
-      // Check hardcoded defaults
-      if (username === 'admin' && password === '123') {
-        return res.json({ username: 'Administrador', role: 'admin' });
+      console.log("Starting database setup...");
+      // Create usuarios table
+      await sql`
+        CREATE TABLE IF NOT EXISTS usuarios (
+          id SERIAL PRIMARY KEY,
+          username TEXT UNIQUE NOT NULL,
+          password_hash TEXT NOT NULL,
+          nome TEXT NOT NULL,
+          role TEXT NOT NULL DEFAULT 'user',
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        )
+      `;
+      console.log("Table 'usuarios' checked/created.");
+
+      // Check if admin exists
+      const adminResults = await sql`SELECT id FROM usuarios WHERE username = 'admin' LIMIT 1`;
+      
+      if (adminResults.length === 0) {
+        console.log("Admin user not found. Creating default admin...");
+        const hash = await bcrypt.hash("123", 10);
+        await sql`
+          INSERT INTO usuarios (username, password_hash, nome, role)
+          VALUES ('admin', ${hash}, 'Administrador', 'admin')
+        `;
+        return res.json({ message: "Banco de dados configurado com sucesso! Usuário 'admin' criado com senha '123'." });
+      } else {
+        // If admin exists, let's ensure the password is '123' if requested via query param
+        if (req.query.reset === 'true') {
+          console.log("Resetting admin password to '123'...");
+          const hash = await bcrypt.hash("123", 10);
+          await sql`
+            UPDATE usuarios SET password_hash = ${hash} WHERE username = 'admin'
+          `;
+          return res.json({ message: "Senha do usuário 'admin' resetada para '123'." });
+        }
       }
-      if (username === 'user' && password === '123') {
-        return res.json({ username: 'Usuário Comum', role: 'user' });
+
+      console.log("Admin user already exists.");
+      res.json({ message: "Banco de dados já estava configurado. O usuário 'admin' já existe." });
+    } catch (error: any) {
+      console.error("Setup error:", error);
+      res.status(500).json({ error: "Erro ao configurar banco de dados.", details: error.message });
+    }
+  });
+
+  // API Route for Login Authentication
+  app.post("/api/auth/login", async (req, res) => {
+    const { username, password } = req.body;
+    const cleanUsername = username ? username.trim() : "";
+    console.log(`Login attempt for username: "${cleanUsername}"`);
+
+    if (!cleanUsername || !password) {
+      return res.status(400).json({ error: "Usuário e senha são obrigatórios." });
+    }
+
+    // Fallback logic if SQL is not available
+    if (!sql) {
+      console.log("Neon SQL client not initialized. Falling back to hardcoded credentials.");
+      if (cleanUsername.toLowerCase() === 'admin' && password === '123') {
+        const token = jwt.sign({ username: 'admin', role: 'admin', nome: 'Administrador' }, JWT_SECRET, { expiresIn: '4h' });
+        return res.json({ user: { username: 'Administrador', role: 'admin' }, token });
+      }
+      return res.status(503).json({ error: "Banco de dados não configurado." });
+    }
+
+    try {
+      console.log("Checking if 'usuarios' table exists...");
+      const tableCheck = await sql`SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'usuarios')`;
+      
+      if (!tableCheck[0].exists) {
+        console.log("Table 'usuarios' does not exist. Please run setup.");
+        return res.status(503).json({ error: "Tabela de usuários não encontrada. Por favor, execute a configuração inicial na aba Base de Dados." });
+      }
+
+      console.log(`Querying database for user: "${cleanUsername.toLowerCase()}"`);
+      const results = await sql`
+        SELECT username, password_hash, nome, role FROM usuarios WHERE LOWER(username) = LOWER(${cleanUsername}) LIMIT 1
+      `;
+
+      console.log(`Query results length: ${results ? results.length : 0}`);
+
+      if (results && results.length > 0) {
+        const user = results[0];
+        console.log(`User found in DB: "${user.username}". Comparing passwords...`);
+        
+        try {
+          const isValid = await bcrypt.compare(password, user.password_hash);
+          console.log(`Password valid: ${isValid}`);
+          
+          if (isValid) {
+            const token = jwt.sign({ username: user.username, role: user.role, nome: user.nome }, JWT_SECRET, { expiresIn: '4h' });
+            return res.json({ 
+              user: { username: user.nome, role: user.role },
+              token
+            });
+          } else {
+            console.log("Password mismatch.");
+          }
+        } catch (bcryptErr) {
+          console.error("Bcrypt comparison error:", bcryptErr);
+          return res.status(500).json({ error: "Erro ao verificar senha." });
+        }
+      } else {
+        console.log("User not found in database.");
+        
+        // Special case: if table exists but is empty, maybe setup didn't run correctly?
+        const countResult = await sql`SELECT COUNT(*) FROM usuarios`;
+        if (parseInt(countResult[0].count) === 0) {
+          console.log("Table 'usuarios' is empty.");
+          return res.status(401).json({ error: "Nenhum usuário cadastrado. Por favor, execute a configuração inicial na aba Base de Dados." });
+        }
       }
 
       res.status(401).json({ error: "Usuário ou senha inválidos." });
     } catch (error: any) {
       console.error("Unexpected error during login:", error);
-      res.status(500).json({ error: "Erro interno no servidor." });
+      res.status(500).json({ error: "Erro interno no servidor.", details: error.message });
+    }
+  });
+
+  // API Route to verify token and get current user
+  app.get("/api/auth/me", async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Não autorizado." });
+    }
+
+    const token = authHeader.split(" ")[1];
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      res.json({ username: decoded.nome, role: decoded.role });
+    } catch (err) {
+      res.status(401).json({ error: "Sessão expirada ou inválida." });
     }
   });
 

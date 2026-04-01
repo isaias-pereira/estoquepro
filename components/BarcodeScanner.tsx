@@ -17,27 +17,47 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
 
     const startScanner = async () => {
       try {
-        await html5QrCode.start(
-          { facingMode: "environment" }, // Prefer rear camera
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 150 },
-            aspectRatio: 1.777778
-          },
-          (decodedText) => {
-            onScan(decodedText);
-            stopScanner();
-          },
-          (errorMessage) => {
-            // ignore errors during scanning
-          }
-        );
+        // Try with environment facing mode first
+        try {
+          await html5QrCode.start(
+            { facingMode: "environment" },
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 150 },
+              aspectRatio: 1.777778
+            },
+            (decodedText) => {
+              onScan(decodedText);
+              stopScanner();
+            },
+            () => {}
+          );
+        } catch (firstErr) {
+          console.warn("Failed to start with environment camera, trying default", firstErr);
+          // Fallback to any available camera
+          await html5QrCode.start(
+            undefined as any,
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 150 },
+              aspectRatio: 1.777778
+            },
+            (decodedText) => {
+              onScan(decodedText);
+              stopScanner();
+            },
+            () => {}
+          );
+        }
       } catch (err: any) {
         console.error("Unable to start scanner", err);
-        if (err?.toString().includes("NotAllowedError") || err?.toString().includes("Permission denied")) {
-          setError("Permissão de câmera negada. Por favor, permita o acesso à câmera nas configurações do seu navegador e recarregue a página.");
+        const errStr = err?.toString() || "";
+        if (errStr.includes("NotAllowedError") || errStr.includes("Permission denied")) {
+          setError("Permissão de câmera negada. Se você estiver usando o app dentro de uma janela de visualização, tente abrir em uma 'Nova Aba' para permitir o acesso.");
+        } else if (errStr.includes("NotFoundError")) {
+          setError("Nenhuma câmera encontrada neste dispositivo.");
         } else {
-          setError("Não foi possível iniciar a câmera. Verifique se ela está sendo usada por outro aplicativo.");
+          setError("Não foi possível iniciar a câmera. Verifique se ela está sendo usada por outro aplicativo ou se o site tem permissão.");
         }
       }
     };
@@ -90,12 +110,20 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
                 <p className="text-red-400 text-[10px] sm:text-xs font-bold leading-relaxed">
                   {error}
                 </p>
-                <button 
-                  onClick={() => window.location.reload()}
-                  className="bg-white/10 hover:bg-white/20 text-white text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all"
-                >
-                  Recarregar App
-                </button>
+                <div className="flex flex-col gap-2">
+                  <button 
+                    onClick={() => window.location.reload()}
+                    className="bg-white/10 hover:bg-white/20 text-white text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all"
+                  >
+                    Tentar Novamente
+                  </button>
+                  <button 
+                    onClick={() => window.open(window.location.href, '_blank')}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all shadow-lg"
+                  >
+                    Abrir em Nova Aba
+                  </button>
+                </div>
               </div>
             )}
           </div>

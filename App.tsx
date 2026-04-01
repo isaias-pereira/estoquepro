@@ -40,25 +40,41 @@ const App: React.FC = () => {
     if (savedSession) {
       const session = JSON.parse(savedSession);
       const now = Date.now();
-      if (now - session.timestamp < SESSION_EXPIRATION_MS) {
-        setUser(session.user);
+      
+      if (session.token && now - session.timestamp < SESSION_EXPIRATION_MS) {
+        // Verify token with server
+        fetch('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${session.token}`
+          }
+        })
+        .then(res => {
+          if (res.ok) return res.json();
+          throw new Error('Invalid session');
+        })
+        .then(userData => {
+          setUser(userData);
+        })
+        .catch(() => {
+          localStorage.removeItem(STORAGE_KEY_SESSION);
+          setUser(null);
+        });
       } else {
         localStorage.removeItem(STORAGE_KEY_SESSION);
       }
     }
   }, []);
 
-  const handleLogin = (userData: User, rememberMe: boolean) => {
+  const handleLogin = (userData: User, rememberMe: boolean, token: string) => {
     setUser(userData);
     setCurrentView('consulta');
 
-    if (rememberMe) {
-      const session = {
-        user: userData,
-        timestamp: Date.now()
-      };
-      localStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(session));
-    }
+    const session = {
+      user: userData,
+      token: token,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(session));
   };
 
   const handleLogout = () => {
@@ -133,9 +149,8 @@ const App: React.FC = () => {
   };
 
   const handleClearInventory = () => {
-    const clearedList = inventoryList.map(item => ({ ...item, quantidade: 0 }));
-    setInventoryList(clearedList);
-    localStorage.setItem(STORAGE_KEY_INVENTORY, JSON.stringify(clearedList));
+    setInventoryList([]);
+    localStorage.removeItem(STORAGE_KEY_INVENTORY);
   };
 
   if (!user) {
@@ -201,8 +216,8 @@ const App: React.FC = () => {
         </main>
       </div>
 
-      <footer className="bg-white/90 backdrop-blur-md border-t py-4 text-center text-slate-600 text-sm relative z-20 font-medium">
-        &copy; {new Date().getFullYear()} Estoque Pro - Sistema de Gestão Inteligente de Supermercados
+      <footer className="bg-white/90 backdrop-blur-md border-t h-[36px] pt-[10px] pb-[12px] flex items-center justify-center text-center text-slate-600 text-sm relative z-20 font-medium">
+        &copy; 2026 Estoque Pro - SGIS
       </footer>
     </div>
   );

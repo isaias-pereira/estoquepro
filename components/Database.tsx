@@ -16,9 +16,24 @@ const Database: React.FC<DatabaseProps> = ({ onUploadConsultation, onClearDataba
   const [loading, setLoading] = useState<string | null>(null);
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string, target: 'consult' | 'invent' } | null>(null);
   const [showConfirmClear, setShowConfirmClear] = useState(false);
+  const [dbStatus, setDbStatus] = useState<{ connected: boolean, tables: { produto: boolean, usuarios: boolean } } | null>(null);
   const [showConfirmCache, setShowConfirmCache] = useState(false);
-  
   const fileConsultRef = useRef<HTMLInputElement>(null);
+
+  const checkDbStatus = async () => {
+    try {
+      const res = await fetch('/api/admin/db-status');
+      if (res.ok) {
+        setDbStatus(await res.json());
+      }
+    } catch (err) {
+      console.error("Error checking DB status:", err);
+    }
+  };
+
+  React.useEffect(() => {
+    checkDbStatus();
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'consult' | 'invent') => {
     const selectedFile = e.target.files?.[0];
@@ -132,6 +147,59 @@ const Database: React.FC<DatabaseProps> = ({ onUploadConsultation, onClearDataba
           </svg>
           Voltar
         </button>
+      </div>
+
+      {/* Setup Database Section */}
+      <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+        <div className="p-3.5 sm:p-6">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+            <div className="flex items-center text-center lg:text-left flex-col lg:flex-row">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-100 rounded-2xl flex items-center justify-center mb-3 lg:mb-0 lg:mr-4 shadow-inner">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-black text-slate-800 tracking-tight">Configuração do Sistema</h3>
+                <p className="text-[10px] sm:text-xs text-slate-500 font-bold mt-0.5 leading-relaxed max-w-md">Inicialize as tabelas de usuários e autenticação no banco de dados central.</p>
+                {dbStatus && (
+                  <div className="mt-2 flex gap-2">
+                    <span className={`text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest ${dbStatus.tables.usuarios ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                      Tabela Usuários: {dbStatus.tables.usuarios ? 'OK' : 'Ausente'}
+                    </span>
+                    <span className={`text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest ${dbStatus.tables.produto ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                      Tabela Produtos: {dbStatus.tables.produto ? 'OK' : 'Ausente'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                setLoading('setup');
+                try {
+                  const res = await fetch('/api/admin/setup');
+                  const data = await res.json();
+                  if (res.ok) {
+                    setStatus({ type: 'success', message: data.message, target: 'consult' });
+                    checkDbStatus();
+                  } else {
+                    setStatus({ type: 'error', message: data.error || 'Erro ao configurar.', target: 'consult' });
+                  }
+                } catch (err) {
+                  setStatus({ type: 'error', message: 'Erro de conexão.', target: 'consult' });
+                } finally {
+                  setLoading(null);
+                }
+              }}
+              disabled={loading === 'setup'}
+              className="whitespace-nowrap bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3 px-6 sm:py-4 sm:px-8 rounded-xl shadow-xl shadow-indigo-100 transition-all active:scale-95 uppercase tracking-[0.2em] text-[10px] disabled:opacity-50"
+            >
+              {loading === 'setup' ? 'Configurando...' : 'Inicializar Tabelas'}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Planilha de Consulta Section */}

@@ -150,7 +150,7 @@ const Database: React.FC<DatabaseProps> = ({ onUploadConsultation, onClearDataba
       </div>
 
       {/* Setup Database Section */}
-      <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+      <div className="hidden bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
         <div className="p-3.5 sm:p-6">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
             <div className="flex items-center text-center lg:text-left flex-col lg:flex-row">

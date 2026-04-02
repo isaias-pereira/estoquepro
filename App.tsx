@@ -153,6 +153,14 @@ const App: React.FC = () => {
     localStorage.removeItem(STORAGE_KEY_INVENTORY);
   };
 
+  const handleRemoveItemFromInventory = (codigo: string) => {
+    setInventoryList(prev => {
+      const newList = prev.filter(i => i.codigo !== codigo);
+      localStorage.setItem(STORAGE_KEY_INVENTORY, JSON.stringify(newList));
+      return newList;
+    });
+  };
+
   if (!user) {
     return <Login onLogin={handleLogin} />;
   }
@@ -177,7 +185,7 @@ const App: React.FC = () => {
       
       <div className="flex-grow flex flex-col relative z-10">
         <main className="flex-grow py-4 sm:py-12">
-          <div className="container mx-auto px-3 sm:px-6 max-w-4xl">
+          <div className="container mx-auto px-3 sm:px-6 max-w-3xl">
             {currentView === 'consulta' && (
               <Consultation inventory={consultationBase} lastUpdate={lastUpdateConsultation} />
             )}
@@ -187,8 +195,7 @@ const App: React.FC = () => {
                 base={consultationBase} 
                 inventory={inventoryList} 
                 onAdd={handleAddItemToInventory}
-                onUndo={handleUndoLastAddition}
-                onUpdateQuantity={handleUpdateItemQuantity}
+                onRemove={handleRemoveItemFromInventory}
                 onClear={handleClearInventory}
               />
             )}

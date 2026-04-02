@@ -76,9 +76,9 @@ const Consultation: React.FC<ConsultationProps> = ({ inventory, lastUpdate }) =>
 
   return (
     <div className="space-y-3 sm:space-y-6 animate-fadeIn">
-      <div className="bg-blue-100 p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl shadow-xl border border-blue-200 relative">
+      <div className="bg-blue-100 p-2.5 sm:p-5 rounded-2xl sm:rounded-3xl shadow-xl border border-blue-200 relative">
         <div className="flex justify-between items-start mb-3 sm:mb-4">
-          <h2 className="text-base sm:text-lg font-black text-slate-800 flex items-center">
+          <h2 className="text-sm sm:text-base font-black text-slate-800 flex items-center">
             <div className="w-7 h-7 sm:w-8 sm:h-8 bg-indigo-50 rounded-lg sm:rounded-xl flex items-center justify-center mr-2 sm:mr-3 shadow-inner">
               <svg className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

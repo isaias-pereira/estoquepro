@@ -1,6 +1,6 @@
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Camera } from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Camera, Trash2, Package, ListFilter, FileDown, Trash } from 'lucide-react';
 import { Product, InventoryItem } from '../types';
 import BarcodeScanner from './BarcodeScanner';
 
@@ -10,12 +10,14 @@ interface InventoryProps {
   base: Product[];
   inventory: InventoryItem[];
   onAdd: (item: InventoryItem) => void;
+  onRemove: (codigo: string) => void;
   onClear: () => void;
 }
 
-const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }) => {
+const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onRemove, onClear }) => {
   const [searchCode, setSearchCode] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
+  const [lastAddedSku, setLastAddedSku] = useState<string | null>(null);
   const [quantity, setQuantity] = useState<number | string>('');
   const [error, setError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -82,6 +84,8 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
       quantidade: Number(quantity) || 0
     });
 
+    setLastAddedSku(selectedProduct.codigo);
+
     // Reset for the next scan cycle as requested
     setSelectedProduct(null);
     setSearchCode('');
@@ -93,6 +97,10 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
       searchInputRef.current?.focus();
     }, 50);
   };
+
+  const totalQuantity = useMemo(() => {
+    return inventory.reduce((acc, item) => acc + item.quantidade, 0);
+  }, [inventory]);
 
   const exportInventory = () => {
     if (inventory.length === 0) return;
@@ -122,8 +130,8 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
   return (
     <div className="space-y-4 sm:space-y-8 animate-fadeIn">
       {/* Área de Lançamento de Contagem */}
-      <div className="bg-white p-4 sm:p-8 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100">
-        <h2 className="text-lg sm:text-xl font-bold text-slate-800 mb-4 sm:mb-6 flex items-center">
+      <div className="bg-white p-3 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100">
+        <h2 className="text-base sm:text-lg font-bold text-slate-800 mb-4 sm:mb-6 flex items-center">
           <div className="w-6 h-6 sm:w-8 sm:h-8 bg-indigo-50 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
             <svg className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
@@ -223,81 +231,114 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onClear }
       </div>
 
       {/* Tabela de Itens Contados */}
-      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="bg-slate-50 px-4 py-3 sm:px-8 sm:py-4 border-b border-slate-100 flex justify-between items-center">
-          <h3 className="text-xs sm:text-sm font-black text-slate-500 uppercase tracking-widest">Itens Contados</h3>
-          <span className="bg-slate-200 text-slate-600 text-[9px] sm:text-[10px] font-black px-2 py-1 rounded-full">{countedList.length} SKUs</span>
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 overflow-hidden animate-fadeIn">
+        <div className="bg-slate-50 px-4 py-4 sm:px-8 sm:py-5 border-b border-slate-100">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-sm sm:text-base font-black text-slate-800 uppercase tracking-widest flex items-center">
+                <ListFilter className="w-4 h-4 mr-2 text-indigo-500" />
+                Itens Contados
+              </h3>
+              <div className="flex flex-wrap gap-2 mt-1">
+                <span className="bg-slate-200 text-slate-600 text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest">{inventory.length} SKUs</span>
+                <span className="bg-indigo-100 text-indigo-700 text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest">{totalQuantity} Unidades Totais</span>
+              </div>
+            </div>
+
+            {inventory.length > 0 && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={exportInventory}
+                  className="p-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all active:scale-90"
+                  title="Exportar (.CSV)"
+                >
+                  <FileDown className="w-5 h-5 sm:w-6 sm:h-6" />
+                </button>
+                
+                {!showConfirmFinalize ? (
+                  <button
+                    onClick={() => setShowConfirmFinalize(true)}
+                    className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-90"
+                    title="Finalizar e Limpar"
+                  >
+                    <Trash className="w-5 h-5 sm:w-6 sm:h-6" />
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-red-100 shadow-sm animate-fadeIn">
+                    <button
+                      onClick={handleFinalize}
+                      className="bg-red-600 text-white text-[8px] font-black px-2 py-1 rounded uppercase"
+                    >
+                      Limpar
+                    </button>
+                    <button
+                      onClick={() => setShowConfirmFinalize(false)}
+                      className="bg-slate-100 text-slate-600 text-[8px] font-black px-2 py-1 rounded uppercase"
+                    >
+                      X
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
         
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[500px] sm:min-w-full">
+        <div className="w-full">
+          <table className="w-full table-fixed">
             <thead>
-              <tr className="bg-white text-left text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest border-b">
-                <th className="px-2 py-3 sm:px-4 sm:py-4">Código</th>
-                <th className="px-2 py-3 sm:px-4 sm:py-4">Descrição</th>
-                <th className="px-4 py-3 sm:px-8 sm:py-4 text-right">Qtd. Total</th>
+              <tr className="bg-slate-50/50 text-left text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                <th className="px-4 py-3 sm:px-8 sm:py-4 w-[60%] sm:w-[70%]">Produto</th>
+                <th className="px-2 py-3 sm:px-4 sm:py-4 text-center w-[20%] sm:w-[15%]">Qtd</th>
+                <th className="px-2 py-3 sm:px-4 sm:py-4 text-right w-[20%] sm:w-[15%]">Ação</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {countedList.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-4 py-8 sm:px-8 sm:py-12 text-center text-slate-400 italic text-xs sm:text-sm">Nenhum item com contagem realizada.</td>
+                  <td colSpan={3} className="px-4 py-12 sm:px-8 sm:py-16 text-center">
+                    <div className="flex flex-col items-center justify-center text-slate-300">
+                      <Package className="w-12 h-12 mb-3 opacity-20" />
+                      <p className="italic text-xs sm:text-sm font-medium">Nenhum item com contagem realizada.</p>
+                    </div>
+                  </td>
                 </tr>
               ) : (
-                countedList.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-2 py-3 sm:px-4 sm:py-4 text-[10px] sm:text-xs font-bold text-slate-600">{item.codigo}</td>
-                    <td className="px-2 py-3 sm:px-4 sm:py-4 text-[10px] sm:text-xs font-black text-slate-800">{item.descricao}</td>
-                    <td className="px-4 py-3 sm:px-8 sm:py-4 text-right text-base sm:text-lg font-black text-indigo-600">{item.quantidade}</td>
+                countedList.map((item) => (
+                  <tr key={item.codigo} className={`hover:bg-indigo-50/30 transition-colors group ${lastAddedSku === item.codigo ? 'bg-indigo-50/50' : ''}`}>
+                    <td className="px-4 py-3 sm:px-8 sm:py-4 overflow-hidden">
+                      <div className="flex items-center gap-2">
+                        <p className="text-[9px] sm:text-xs font-black text-slate-800 leading-tight truncate group-hover:text-indigo-900 transition-colors" title={item.descricao}>
+                          {item.descricao}
+                        </p>
+                        {lastAddedSku === item.codigo && (
+                          <span className="shrink-0 text-[6px] font-black bg-emerald-500 text-white px-1 py-0.5 rounded-full uppercase tracking-tighter animate-pulse">Novo</span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1">
+                        <span className="text-[7px] sm:text-[8px] font-black text-indigo-500 uppercase">SKU: {item.codigo}</span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-3 sm:px-4 sm:py-4 text-center">
+                      <span className="inline-block text-[10px] sm:text-base font-black text-indigo-600 bg-indigo-50/50 px-2 py-0.5 sm:px-3 sm:py-1 rounded-lg border border-indigo-100/50">
+                        {item.quantidade}
+                      </span>
+                    </td>
+                    <td className="px-2 py-3 sm:px-4 sm:py-4 text-right">
+                      <button 
+                        onClick={() => onRemove(item.codigo)}
+                        className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-90"
+                        title="Remover item"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
-
-        {countedList.length > 0 && (
-          <div className="p-4 sm:p-8 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
-            {!showConfirmFinalize ? (
-              <button
-                onClick={() => setShowConfirmFinalize(true)}
-                className="bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2.5 sm:py-3 px-4 sm:px-8 rounded-lg sm:rounded-xl transition-all border border-red-200 active:scale-95 flex items-center justify-center text-xs sm:text-sm"
-              >
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Finalizar e Limpar
-              </button>
-            ) : (
-              <div className="flex flex-col sm:flex-row gap-2 items-center animate-fadeIn">
-                <span className="text-[10px] font-black text-red-600 uppercase tracking-widest mr-2">Confirmar Limpeza?</span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleFinalize}
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg text-xs"
-                  >
-                    Sim, Limpar
-                  </button>
-                  <button
-                    onClick={() => setShowConfirmFinalize(false)}
-                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 px-4 rounded-lg text-xs"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            )}
-            <button
-              onClick={exportInventory}
-              className="bg-slate-800 hover:bg-black text-white font-bold py-2.5 sm:py-3 px-4 sm:px-8 rounded-lg sm:rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center text-xs sm:text-sm"
-            >
-              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 4m4 4v12" />
-              </svg>
-              Exportar (.CSV)
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

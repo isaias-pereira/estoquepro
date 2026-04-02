@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Camera, Trash2, Package, ListFilter, FileDown, Trash, Pencil, Check, X } from 'lucide-react';
+import { Camera, Trash2, Package, ListFilter, FileDown, Trash, Pencil, Check, X, RotateCcw } from 'lucide-react';
 import { Product, InventoryItem } from '../types';
 import BarcodeScanner from './BarcodeScanner';
 
@@ -28,7 +28,15 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onRemove,
   const [editQuantity, setEditQuantity] = useState<number | string>('');
   
   const [showConfirmFinalize, setShowConfirmFinalize] = useState(false);
+  const [confirmDeleteSku, setConfirmDeleteSku] = useState<string | null>(null);
   
+  const [lastAction, setLastAction] = useState<{
+    type: 'ADD' | 'REMOVE' | 'EDIT' | 'CLEAR';
+    data: any;
+  } | null>(null);
+  const [showUndo, setShowUndo] = useState(false);
+  const undoTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   const searchInputRef = useRef<HTMLInputElement>(null);
   const qtyInputRef = useRef<HTMLInputElement>(null);
 
@@ -36,6 +44,43 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onRemove,
   useEffect(() => {
     searchInputRef.current?.focus();
   }, []);
+
+  const triggerUndo = (type: 'ADD' | 'REMOVE' | 'EDIT' | 'CLEAR', data: any) => {
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setLastAction({ type, data });
+    setShowUndo(true);
+    undoTimerRef.current = setTimeout(() => {
+      setShowUndo(false);
+      setLastAction(null);
+    }, 5000);
+  };
+
+  const handleUndo = () => {
+    if (!lastAction) return;
+    const { type, data } = lastAction;
+
+    if (type === 'ADD') {
+      const item = inventory.find(i => i.codigo === data.sku);
+      if (item) {
+        const newQty = item.quantidade - data.quantity;
+        if (newQty <= 0) {
+          onRemove(data.sku);
+        } else {
+          onUpdate(data.sku, newQty);
+        }
+      }
+    } else if (type === 'REMOVE') {
+      onAdd(data.item);
+    } else if (type === 'EDIT') {
+      onUpdate(data.sku, data.oldQuantity);
+    } else if (type === 'CLEAR') {
+      data.items.forEach((item: InventoryItem) => onAdd(item));
+    }
+
+    setShowUndo(false);
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setLastAction(null);
+  };
 
   const handleSearch = async (e?: React.FormEvent, codeToSearch?: string) => {
     if (e) e.preventDefault();
@@ -88,6 +133,8 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onRemove,
       quantidade: Number(quantity) || 0
     });
 
+    triggerUndo('ADD', { sku: selectedProduct.codigo, quantity: Number(quantity) || 0 });
+
     setLastAddedSku(selectedProduct.codigo);
 
     // Reset for the next scan cycle as requested
@@ -120,6 +167,7 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onRemove,
   };
 
   const handleFinalize = () => {
+    triggerUndo('CLEAR', { items: [...inventory] });
     onClear();
     setSelectedProduct(null);
     setSearchCode('');
@@ -138,6 +186,10 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onRemove,
   const handleSaveEdit = (codigo: string) => {
     const newQty = Number(editQuantity);
     if (!isNaN(newQty)) {
+      const item = inventory.find(i => i.codigo === codigo);
+      if (item) {
+        triggerUndo('EDIT', { sku: codigo, oldQuantity: item.quantidade });
+      }
       onUpdate(codigo, newQty);
     }
     setEditingSku(null);
@@ -387,13 +439,38 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onRemove,
                             >
                               <Pencil className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                             </button>
-                            <button 
-                              onClick={() => onRemove(item.codigo)}
-                              className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-90"
-                              title="Remover item"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
-                            </button>
+                            
+                            {confirmDeleteSku === item.codigo ? (
+                              <div className="flex items-center gap-1 bg-red-50 p-0.5 rounded-lg border border-red-100 animate-fadeIn">
+                                <button
+                                  onClick={() => {
+                                    const itemToRemove = inventory.find(i => i.codigo === item.codigo);
+                                    if (itemToRemove) {
+                                      triggerUndo('REMOVE', { item: { ...itemToRemove } });
+                                    }
+                                    onRemove(item.codigo);
+                                    setConfirmDeleteSku(null);
+                                  }}
+                                  className="bg-red-600 text-white text-[8px] sm:text-[9px] font-black px-2 py-1 rounded uppercase hover:bg-red-700 transition-colors"
+                                >
+                                  Excluir
+                                </button>
+                                <button
+                                  onClick={() => setConfirmDeleteSku(null)}
+                                  className="bg-slate-200 text-slate-600 text-[8px] sm:text-[9px] font-black px-2 py-1 rounded uppercase hover:bg-slate-300 transition-colors"
+                                >
+                                  X
+                                </button>
+                              </div>
+                            ) : (
+                              <button 
+                                onClick={() => setConfirmDeleteSku(item.codigo)}
+                                className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-90"
+                                title="Remover item"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                              </button>
+                            )}
                           </>
                         )}
                       </div>
@@ -405,6 +482,33 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onRemove,
           </table>
         </div>
       </div>
+
+      {/* Undo Toast */}
+      {showUndo && (
+        <div className="fixed bottom-6 left-4 right-4 sm:bottom-20 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-50 animate-slideUp flex justify-center">
+          <div className="bg-slate-900/95 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center justify-between sm:justify-start gap-3 sm:gap-4 border border-slate-700/50 backdrop-blur-md w-full sm:w-auto min-w-[280px] max-w-md">
+            <div className="flex items-center gap-2 overflow-hidden">
+              <div className="shrink-0 w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+              <p className="text-[10px] sm:text-sm font-bold whitespace-nowrap truncate">
+                {lastAction?.type === 'ADD' && 'Item adicionado'}
+                {lastAction?.type === 'REMOVE' && 'Item removido'}
+                {lastAction?.type === 'EDIT' && 'Quantidade alterada'}
+                {lastAction?.type === 'CLEAR' && 'Inventário limpo'}
+              </p>
+            </div>
+            <button 
+              onClick={handleUndo}
+              className="shrink-0 flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all active:scale-95 shadow-lg shadow-indigo-500/20"
+            >
+              <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4" />
+              Desfazer
+            </button>
+            <div className="absolute bottom-0 left-0 h-1 bg-indigo-500/30 rounded-full overflow-hidden w-full">
+              <div className="h-full bg-indigo-500 animate-shrinkWidth"></div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

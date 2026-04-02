@@ -11,10 +11,13 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ user, currentView, onNavigate, onLogout }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);
+  const [isMobileAdminOpen, setIsMobileAdminOpen] = useState(false);
 
   const handleNavigate = (view: View) => {
     onNavigate(view);
     setIsMenuOpen(false);
+    setIsMobileAdminOpen(false);
   };
 
   return (
@@ -53,35 +56,73 @@ const Header: React.FC<HeaderProps> = ({ user, currentView, onNavigate, onLogout
               Inventário
             </button>
 
-            {user.role === 'admin' && (
-              <button
-                onClick={() => onNavigate('database')}
-                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 ${
-                  currentView === 'database' ? 'bg-white text-indigo-700 shadow-md' : 'text-indigo-100 hover:bg-indigo-600'
-                }`}
-              >
-                Base de Dados
-              </button>
-            )}
-
-            {user.role === 'admin' && (
-              <button
-                onClick={() => onNavigate('usuarios')}
-                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 ${
-                  currentView === 'usuarios' ? 'bg-white text-indigo-700 shadow-md' : 'text-indigo-100 hover:bg-indigo-600'
-                }`}
-              >
-                Usuários
-              </button>
-            )}
-
             <div className="h-6 w-px bg-white/20 mx-2"></div>
-            <div className="flex items-center space-x-2 text-indigo-100 mr-2">
-              <span className="text-[9px] uppercase font-black bg-indigo-800/50 px-2 py-0.5 rounded-lg border border-white/10">
-                {user.role}
-              </span>
-              <span className="text-sm font-bold max-w-[100px] truncate">{user.username}</span>
-            </div>
+
+            {user.role === 'admin' ? (
+              <div className="relative">
+                <button
+                  onClick={() => setIsAdminDropdownOpen(!isAdminDropdownOpen)}
+                  onBlur={() => setTimeout(() => setIsAdminDropdownOpen(false), 200)}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-all active:scale-95 border border-transparent ${
+                    isAdminDropdownOpen || currentView === 'database' || currentView === 'usuarios' 
+                      ? 'bg-white/10 border-white/20 shadow-inner' 
+                      : 'hover:bg-white/5'
+                  }`}
+                >
+                  <div className="flex flex-col items-end">
+                    <span className="text-[8px] uppercase font-black bg-indigo-800/50 px-1.5 py-0.5 rounded-md border border-white/10 leading-none mb-1">
+                      {user.role}
+                    </span>
+                    <span className="text-xs font-bold truncate max-w-[80px]">{user.username}</span>
+                  </div>
+                  <svg 
+                    className={`w-4 h-4 text-indigo-200 transition-transform duration-200 ${isAdminDropdownOpen ? 'rotate-180' : ''}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {isAdminDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 animate-fadeIn overflow-hidden">
+                    <div className="px-4 py-2 border-b border-slate-50 mb-1">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Administração</p>
+                    </div>
+                    <button
+                      onClick={() => handleNavigate('database')}
+                      className={`w-full flex items-center justify-end space-x-3 px-4 py-2.5 text-sm font-bold transition-colors ${
+                        currentView === 'database' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span>Base de Dados</span>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => handleNavigate('usuarios')}
+                      className={`w-full flex items-center justify-end space-x-3 px-4 py-2.5 text-sm font-bold transition-colors ${
+                        currentView === 'usuarios' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span>Usuários</span>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2 text-indigo-100 mr-2">
+                <span className="text-[9px] uppercase font-black bg-indigo-800/50 px-2 py-0.5 rounded-lg border border-white/10">
+                  {user.role}
+                </span>
+                <span className="text-sm font-bold max-w-[100px] truncate">{user.username}</span>
+              </div>
+            )}
             <button
               onClick={onLogout}
               className="px-4 py-2 rounded-xl text-sm font-bold text-white hover:bg-red-600 transition-all active:scale-95 flex items-center space-x-1"
@@ -144,62 +185,68 @@ const Header: React.FC<HeaderProps> = ({ user, currentView, onNavigate, onLogout
                 </div>
                 <span className="text-[9px] font-black uppercase tracking-wider">Inventário</span>
               </button>
-
-              {user.role === 'admin' && (
-                <button
-                  onClick={() => handleNavigate('database')}
-                  className={`flex flex-col items-center justify-center p-3 rounded-2xl transition-all active:scale-95 ${
-                    currentView === 'database' 
-                      ? 'bg-white text-indigo-700 shadow-xl' 
-                      : 'bg-white/10 text-white border border-white/10 backdrop-blur-sm'
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1.5 ${currentView === 'database' ? 'bg-indigo-50' : 'bg-white/10'}`}>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-                    </svg>
-                  </div>
-                  <span className="text-[9px] font-black uppercase tracking-wider">Dados</span>
-                </button>
-              )}
-
-              {user.role === 'admin' && (
-                <button
-                  onClick={() => handleNavigate('usuarios')}
-                  className={`flex flex-col items-center justify-center p-3 rounded-2xl transition-all active:scale-95 ${
-                    currentView === 'usuarios' 
-                      ? 'bg-white text-indigo-700 shadow-xl' 
-                      : 'bg-white/10 text-white border border-white/10 backdrop-blur-sm'
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1.5 ${currentView === 'usuarios' ? 'bg-indigo-50' : 'bg-white/10'}`}>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                    </svg>
-                  </div>
-                  <span className="text-[9px] font-black uppercase tracking-wider">Usuários</span>
-                </button>
-              )}
             </div>
 
-            <div className="pt-4 border-t border-white/10 flex items-center justify-between px-2">
-              <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-sm font-black ring-2 ring-white/20 shadow-inner backdrop-blur-sm">
-                  {user.username.charAt(0).toUpperCase()}
+            <div className="pt-4 border-t border-white/10 flex flex-col space-y-3 px-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-sm font-black ring-2 ring-white/20 shadow-inner backdrop-blur-sm">
+                    {user.username.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-black leading-none">{user.username}</p>
+                      {user.role === 'admin' && (
+                        <button 
+                          onClick={() => setIsMobileAdminOpen(!isMobileAdminOpen)}
+                          className={`p-1 rounded-md transition-colors ${isMobileAdminOpen ? 'bg-white text-indigo-700' : 'bg-white/10 text-indigo-200'}`}
+                        >
+                          <svg className={`w-3 h-3 transition-transform ${isMobileAdminOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[7px] uppercase font-black text-indigo-200 tracking-widest mt-1">{user.role}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-black leading-none">{user.username}</p>
-                  <p className="text-[7px] uppercase font-black text-indigo-200 tracking-widest mt-1">{user.role}</p>
-                </div>
+                <button
+                  onClick={onLogout}
+                  className="bg-red-500/20 hover:bg-red-500 text-red-100 p-2 rounded-xl transition-all border border-red-500/30 active:scale-95"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                </button>
               </div>
-              <button
-                onClick={onLogout}
-                className="bg-red-500/20 hover:bg-red-500 text-red-100 p-2 rounded-xl transition-all border border-red-500/30 active:scale-95"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-              </button>
+
+              {/* Mobile Admin Dropdown Content */}
+              {user.role === 'admin' && isMobileAdminOpen && (
+                <div className="bg-white/5 rounded-2xl border border-white/10 overflow-hidden animate-fadeIn">
+                  <button
+                    onClick={() => handleNavigate('database')}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-colors ${
+                      currentView === 'database' ? 'bg-white text-indigo-700' : 'text-indigo-100 hover:bg-white/5'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                    </svg>
+                    <span>Base de Dados</span>
+                  </button>
+                  <button
+                    onClick={() => handleNavigate('usuarios')}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-colors ${
+                      currentView === 'usuarios' ? 'bg-white text-indigo-700' : 'text-indigo-100 hover:bg-white/5'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <span>Usuários</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

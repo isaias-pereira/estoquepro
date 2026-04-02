@@ -166,11 +166,6 @@ const Consultation: React.FC<ConsultationProps> = ({ inventory, lastUpdate }) =>
               <div className="p-6 sm:p-10 space-y-8">
                 {/* Header & Description */}
                 <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <span className="h-px w-6 bg-indigo-200"></span>
-                    <span className="text-[8px] font-black text-indigo-400 uppercase tracking-[0.3em]">Ficha Técnica</span>
-                    <span className="h-px flex-grow bg-indigo-50"></span>
-                  </div>
                   <h2 className="text-2xl sm:text-4xl font-black text-slate-900 leading-[1.1] tracking-tight">
                     {result.descricao}
                   </h2>

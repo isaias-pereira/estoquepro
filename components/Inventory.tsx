@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Camera, Trash2, Package, ListFilter, FileDown, Trash } from 'lucide-react';
+import { Camera, Trash2, Package, ListFilter, FileDown, Trash, Pencil, Check, X } from 'lucide-react';
 import { Product, InventoryItem } from '../types';
 import BarcodeScanner from './BarcodeScanner';
 
@@ -11,10 +11,11 @@ interface InventoryProps {
   inventory: InventoryItem[];
   onAdd: (item: InventoryItem) => void;
   onRemove: (codigo: string) => void;
+  onUpdate: (codigo: string, newQuantity: number) => void;
   onClear: () => void;
 }
 
-const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onRemove, onClear }) => {
+const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onRemove, onUpdate, onClear }) => {
   const [searchCode, setSearchCode] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
   const [lastAddedSku, setLastAddedSku] = useState<string | null>(null);
@@ -22,6 +23,9 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onRemove,
   const [error, setError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  
+  const [editingSku, setEditingSku] = useState<string | null>(null);
+  const [editQuantity, setEditQuantity] = useState<number | string>('');
   
   const [showConfirmFinalize, setShowConfirmFinalize] = useState(false);
   
@@ -121,11 +125,31 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onRemove,
     setSearchCode('');
     setQuantity('');
     setError(null);
+    setEditingSku(null);
     setShowConfirmFinalize(false);
     setTimeout(() => searchInputRef.current?.focus(), 50);
   };
 
-  const countedList = inventory;
+  const handleStartEdit = (item: InventoryItem) => {
+    setEditingSku(item.codigo);
+    setEditQuantity(item.quantidade);
+  };
+
+  const handleSaveEdit = (codigo: string) => {
+    const newQty = Number(editQuantity);
+    if (!isNaN(newQty)) {
+      onUpdate(codigo, newQty);
+    }
+    setEditingSku(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingSku(null);
+  };
+
+  const countedList = useMemo(() => {
+    return [...inventory].sort((a, b) => a.descricao.localeCompare(b.descricao));
+  }, [inventory]);
 
   return (
     <div className="space-y-4 sm:space-y-8 animate-fadeIn">
@@ -239,10 +263,6 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onRemove,
                 <ListFilter className="w-4 h-4 mr-2 text-indigo-500" />
                 Itens Contados
               </h3>
-              <div className="flex flex-wrap gap-2 mt-1">
-                <span className="bg-slate-200 text-slate-600 text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest">{inventory.length} SKUs</span>
-                <span className="bg-indigo-100 text-indigo-700 text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest">{totalQuantity} Unidades Totais</span>
-              </div>
             </div>
 
             {inventory.length > 0 && (
@@ -287,7 +307,7 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onRemove,
         <div className="w-full">
           <table className="w-full table-fixed">
             <thead>
-              <tr className="bg-slate-50/50 text-left text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+              <tr className="bg-slate-100/80 text-left text-[9px] sm:text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-200">
                 <th className="px-4 py-3 sm:px-8 sm:py-4 w-[60%] sm:w-[70%]">Produto</th>
                 <th className="px-2 py-3 sm:px-4 sm:py-4 text-center w-[20%] sm:w-[15%]">Qtd</th>
                 <th className="px-2 py-3 sm:px-4 sm:py-4 text-right w-[20%] sm:w-[15%]">Ação</th>
@@ -305,8 +325,8 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onRemove,
                 </tr>
               ) : (
                 countedList.map((item) => (
-                  <tr key={item.codigo} className={`hover:bg-indigo-50/30 transition-colors group ${lastAddedSku === item.codigo ? 'bg-indigo-50/50' : ''}`}>
-                    <td className="px-4 py-3 sm:px-8 sm:py-4 overflow-hidden">
+                  <tr key={item.codigo} className={`hover:bg-indigo-50/30 transition-colors group even:bg-slate-200/60 ${lastAddedSku === item.codigo ? 'bg-indigo-100/50' : ''}`}>
+                    <td className="px-4 py-3 sm:px-8 sm:py-4 overflow-hidden border-l-2 border-transparent group-hover:border-indigo-500 transition-all">
                       <div className="flex items-center gap-2">
                         <p className="text-[9px] sm:text-xs font-black text-slate-800 leading-tight truncate group-hover:text-indigo-900 transition-colors" title={item.descricao}>
                           {item.descricao}
@@ -320,18 +340,63 @@ const Inventory: React.FC<InventoryProps> = ({ base, inventory, onAdd, onRemove,
                       </div>
                     </td>
                     <td className="px-2 py-3 sm:px-4 sm:py-4 text-center">
-                      <span className="inline-block text-[10px] sm:text-base font-black text-indigo-600 bg-indigo-50/50 px-2 py-0.5 sm:px-3 sm:py-1 rounded-lg border border-indigo-100/50">
-                        {item.quantidade}
-                      </span>
+                      {editingSku === item.codigo ? (
+                        <input
+                          type="number"
+                          min="0"
+                          value={editQuantity}
+                          onChange={(e) => setEditQuantity(e.target.value)}
+                          className="w-16 sm:w-20 px-1 py-1 rounded border border-indigo-300 text-center text-[10px] sm:text-base font-black outline-none focus:ring-2 focus:ring-indigo-500/20"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveEdit(item.codigo);
+                            if (e.key === 'Escape') handleCancelEdit();
+                          }}
+                        />
+                      ) : (
+                        <span className="inline-block text-[10px] sm:text-base font-black text-indigo-600 bg-indigo-50/50 px-2 py-0.5 sm:px-3 sm:py-1 rounded-lg border border-indigo-100/50">
+                          {item.quantidade}
+                        </span>
+                      )}
                     </td>
                     <td className="px-2 py-3 sm:px-4 sm:py-4 text-right">
-                      <button 
-                        onClick={() => onRemove(item.codigo)}
-                        className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-90"
-                        title="Remover item"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
-                      </button>
+                      <div className="flex justify-end gap-1 sm:gap-2">
+                        {editingSku === item.codigo ? (
+                          <>
+                            <button 
+                              onClick={() => handleSaveEdit(item.codigo)}
+                              className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all active:scale-90"
+                              title="Salvar"
+                            >
+                              <Check className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                            </button>
+                            <button 
+                              onClick={handleCancelEdit}
+                              className="p-1.5 text-slate-400 hover:bg-slate-50 rounded-lg transition-all active:scale-90"
+                              title="Cancelar"
+                            >
+                              <X className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button 
+                              onClick={() => handleStartEdit(item)}
+                              className="p-1.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all active:scale-90"
+                              title="Editar quantidade"
+                            >
+                              <Pencil className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                            </button>
+                            <button 
+                              onClick={() => onRemove(item.codigo)}
+                              className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-90"
+                              title="Remover item"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

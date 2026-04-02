@@ -196,6 +196,7 @@ const App: React.FC = () => {
                 inventory={inventoryList} 
                 onAdd={handleAddItemToInventory}
                 onRemove={handleRemoveItemFromInventory}
+                onUpdate={handleUpdateItemQuantity}
                 onClear={handleClearInventory}
               />
             )}
